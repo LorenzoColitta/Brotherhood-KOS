@@ -1,0 +1,36 @@
+{
+  "name": "brotherhood-kos",
+  "version": "1.0.0",
+  "description": "KOS (Kill on Sight) system for the Brotherhood with MongoDB and Discord bot",
+  "main": "src/bot/index.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node src/bot/index.js",
+    "deploy-commands": "node src/bot/deploy-commands.js",
+    "set-admin-password": "node scripts/set-admin-password.js",
+    "dev": "node --watch src/bot/index.js",
+    "worker:dev": "wrangler dev src/api/worker.js",
+    "worker:deploy": "wrangler deploy src/api/worker.js"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "kos",
+    "mongodb",
+    "cloudflare-workers"
+  ],
+  "author": "Brotherhood",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "mongoose": "^8.0.3",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "wrangler": "^3.22.1"
+  }
+}
