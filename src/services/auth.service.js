@@ -6,7 +6,7 @@ import crypto from 'crypto';
  * Generate a random authentication code
  */
 export function generateAuthCode() {
-  // Generate a 8-character alphanumeric code
+  // Generate an 8-character hexadecimal code (0-9, A-F)
   return crypto.randomBytes(4).toString('hex').toUpperCase();
 }
 

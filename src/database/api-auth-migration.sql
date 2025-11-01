@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS api_auth_codes (
 );
 
 -- API Sessions Table
+-- Token is VARCHAR(64) to match 64-character hex string from crypto.randomBytes(32).toString('hex')
 CREATE TABLE IF NOT EXISTS api_sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     token VARCHAR(64) NOT NULL UNIQUE,

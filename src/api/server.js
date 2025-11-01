@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { logger } from '../utils/logger.js';
 import { verifyAuthCode, createApiSession, verifyApiSession, revokeApiSession, cleanupExpired } from '../services/auth.service.js';
@@ -21,9 +22,29 @@ dotenv.config();
 const app = express();
 const PORT = process.env.API_PORT || 3000;
 
+// Rate limiting middleware
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limit each IP to 10 login attempts per windowMs
+  message: { error: 'Too Many Requests', message: 'Too many authentication attempts, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // Limit each IP to 60 requests per minute
+  message: { error: 'Too Many Requests', message: 'Too many requests, please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Apply rate limiting to all routes
+app.use(apiLimiter);
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -65,7 +86,7 @@ app.get('/health', (req, res) => {
 });
 
 // Authentication endpoints
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   try {
     const { code } = req.body;
     

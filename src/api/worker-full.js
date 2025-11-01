@@ -805,6 +805,7 @@ async function getRobloxUserInfo(username) {
 
 /**
  * Parse duration string to milliseconds
+ * Note: Uses approximate values for months (30 days) and years (365 days)
  */
 function parseDuration(duration) {
   const units = {
@@ -813,8 +814,8 @@ function parseDuration(duration) {
     h: 60 * 60 * 1000,
     d: 24 * 60 * 60 * 1000,
     w: 7 * 24 * 60 * 60 * 1000,
-    mo: 30 * 24 * 60 * 60 * 1000,
-    y: 365 * 24 * 60 * 60 * 1000,
+    mo: 30 * 24 * 60 * 60 * 1000,  // Approximate: 30 days
+    y: 365 * 24 * 60 * 60 * 1000,  // Approximate: 365 days (no leap year)
   };
   
   const match = duration.match(/^(\d+)(s|m|h|d|w|mo|y)$/);
