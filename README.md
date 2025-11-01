@@ -5,9 +5,9 @@ A comprehensive Kill On Sight (KOS) management system for the Brotherhood Discor
 ## ✨ Features
 
 - 🎯 **Discord Bot** - Slash commands for managing KOS entries
+- 🌐 **REST API** - Full-featured API with Discord authentication
 - 📊 **Database** - Supabase (PostgreSQL) backend with full audit trail
 - 🔔 **Notifications** - Optional Telegram integration for real-time alerts
-- 🌐 **Public API** - Cloudflare Worker for read-only public access
 - 🔒 **Admin Panel** - Secure DM-based admin interface
 - ⏰ **Auto-Expiry** - Automatic archival of expired entries
 - 📝 **History Tracking** - Complete exit registry and audit logs
@@ -39,6 +39,7 @@ A comprehensive Kill On Sight (KOS) management system for the Brotherhood Discor
 3. **Set up Supabase**
    - Create a new project at [supabase.com](https://supabase.com)
    - Go to the SQL Editor and run `src/database/schema.sql`
+   - Then run `src/database/api-auth-migration.sql` for API authentication tables
    - Get your project URL and API keys (from Settings → API)
 
 4. **Configure environment variables**
@@ -83,6 +84,15 @@ A comprehensive Kill On Sight (KOS) management system for the Brotherhood Discor
    npm run start:doppler
    ```
 
+8. **Start the API (optional)**
+   ```bash
+   # With .env
+   npm run start:api
+   
+   # With Doppler
+   npm run start:api:doppler
+   ```
+
 ## 📋 Available Commands
 
 ### Discord Bot Commands
@@ -91,22 +101,62 @@ A comprehensive Kill On Sight (KOS) management system for the Brotherhood Discor
 - `/remove <username>` - Remove a player from the KOS list
 - `/list [filter]` - View the KOS list with pagination
 - `/status` - View bot status and statistics
+- `/console` - Generate an authentication code for API access
 - `/manage` - Admin panel for bot management (requires password)
 
 ### NPM Scripts
 
 ```bash
-# Standard scripts
-npm start                    # Start the bot
+# Bot scripts
+npm start                    # Start the Discord bot
 npm run deploy-commands      # Deploy Discord slash commands
 npm run set-admin-password   # Set admin password interactively
 
+# API scripts
+npm run start:api            # Start the REST API server
+
 # Doppler scripts (recommended)
 npm run start:doppler        # Start bot with Doppler secrets
+npm run start:api:doppler    # Start API with Doppler secrets
 npm run deploy-commands:doppler
 npm run set-admin:doppler
 npm run api-deploy:doppler   # Deploy Cloudflare Worker
 ```
+
+## 🌐 REST API
+
+The Brotherhood KOS system includes a full-featured REST API for programmatic access.
+
+### Quick Start
+
+1. Use the Discord bot to generate an auth code:
+   ```
+   /console
+   ```
+
+2. Exchange the code for a session token:
+   ```bash
+   curl -X POST http://localhost:3000/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"code": "YOUR_CODE"}'
+   ```
+
+3. Use the token for API requests:
+   ```bash
+   curl -X GET http://localhost:3000/api/kos \
+     -H "Authorization: Bearer YOUR_TOKEN"
+   ```
+
+### API Features
+
+- ✅ Full CRUD operations on KOS entries
+- ✅ History/exit registry access
+- ✅ Statistics endpoint
+- ✅ Discord-based authentication
+- ✅ Session management
+- ✅ CORS support
+
+For complete API documentation, see [API.md](./API.md).
 
 ## 🔧 Configuration
 
@@ -128,6 +178,7 @@ DISCORD_GUILD_ID=your_guild_id                    # For faster command deploymen
 ADMIN_PASSWORD=your_admin_password                # For automated admin setup
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token        # For notifications
 TELEGRAM_CHAT_ID=your_telegram_chat_id
+API_PORT=3000                                     # API server port (default: 3000)
 NODE_ENV=production
 ```
 
@@ -135,6 +186,7 @@ See `.env.example` for a complete template.
 
 ## 📚 Documentation
 
+- **[API.md](./API.md)** - Complete REST API documentation and examples
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Detailed deployment instructions for all components
 - **[RAILWAY.md](./RAILWAY.md)** - Deploy to Railway platform (recommended for beginners)
 - **[DOPPLER.md](./DOPPLER.md)** - Secrets management with Doppler integration
