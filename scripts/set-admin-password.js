@@ -8,8 +8,8 @@
  *   OR with Doppler: doppler run -- node scripts/set-admin-password.js
  * 
  * This script will:
- * 1. Use ADMIN_PASSWORD from environment (Doppler) if available
- * 2. Otherwise, prompt for a new admin password
+ * 1. Check for ADMIN_PASSWORD in configuration (from Doppler or .env)
+ * 2. If not found, prompt for a new admin password interactively
  * 3. Hash the password using SHA-256
  * 4. Store the hash in the bot_config table in Supabase
  * 
@@ -101,18 +101,18 @@ async function main() {
     
     let password;
     
-    // Check if ADMIN_PASSWORD is set in environment (from Doppler or .env)
-    if (process.env.ADMIN_PASSWORD) {
-      logger.info('Using ADMIN_PASSWORD from environment (Doppler/env)...');
-      password = process.env.ADMIN_PASSWORD;
+    // Check if ADMIN_PASSWORD is set in configuration (from Doppler or .env)
+    if (config.admin.password) {
+      logger.info('Using ADMIN_PASSWORD from Doppler configuration...');
+      password = config.admin.password;
       
       if (password.length < 8) {
         logger.error('ADMIN_PASSWORD must be at least 8 characters long.');
         process.exit(1);
       }
     } else {
-      // Prompt for password if not in environment
-      logger.info('ADMIN_PASSWORD not found in environment, prompting for input...');
+      // Prompt for password if not in configuration
+      logger.info('ADMIN_PASSWORD not found in configuration, prompting for input...');
       password = await prompt('Enter new admin password: ', true);
       
       if (!password || password.length < 8) {
