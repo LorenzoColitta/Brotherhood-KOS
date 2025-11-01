@@ -552,6 +552,39 @@ curl -X GET http://localhost:3000/api/stats \
 
 ---
 
+## Rate Limiting
+
+The API implements rate limiting to protect against abuse:
+
+### Express Server (Node.js)
+
+- **Authentication endpoints:** 10 requests per 15 minutes per IP
+  - Applies to `/api/auth/login`
+  - Prevents brute force attacks
+
+- **General API endpoints:** 60 requests per minute per IP
+  - Applies to all other endpoints
+  - Prevents API abuse
+
+**Rate limit headers:**
+- `RateLimit-Limit` - Maximum requests allowed in window
+- `RateLimit-Remaining` - Requests remaining in current window
+- `RateLimit-Reset` - Time when the rate limit resets
+
+**Response when limit exceeded (429):**
+```json
+{
+  "error": "Too Many Requests",
+  "message": "Too many requests, please slow down."
+}
+```
+
+### Cloudflare Workers
+
+Cloudflare Workers benefit from Cloudflare's built-in DDoS protection and rate limiting at the edge. Additional rate limiting can be configured via Cloudflare dashboard or Workers KV.
+
+---
+
 ## Security Best Practices
 
 1. **Keep your auth code private** - Never share your authentication code
@@ -559,6 +592,7 @@ curl -X GET http://localhost:3000/api/stats \
 3. **Use HTTPS in production** - Always use secure connections in production
 4. **Rotate tokens regularly** - Logout and re-authenticate periodically
 5. **Monitor API usage** - Check logs for suspicious activity
+6. **Respect rate limits** - Implement exponential backoff in your clients
 
 ---
 
@@ -567,5 +601,6 @@ curl -X GET http://localhost:3000/api/stats \
 - Authentication codes expire after 60 minutes
 - Session tokens expire after 24 hours
 - Expired codes and sessions are automatically cleaned up
+- The API implements rate limiting to prevent abuse
 - The API automatically sends Telegram notifications (if configured) when KOS entries are added/removed
 - Admin functions (toggle bot status) are not available via API - use the Discord bot's `/manage` command instead
