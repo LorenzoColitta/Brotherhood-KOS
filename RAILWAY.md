@@ -56,8 +56,6 @@ NODE_ENV=production
 
 ```
 DISCORD_GUILD_ID=your_guild_id_for_faster_commands
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-TELEGRAM_CHAT_ID=your_telegram_chat_id
 ADMIN_PASSWORD=your_secure_admin_password
 ```
 
@@ -265,7 +263,6 @@ For bot issues:
 After deployment:
 - Test all bot commands in Discord
 - Set up monitoring and alerts
-- Configure Telegram notifications (optional)
 - Deploy Cloudflare Worker API (optional, see [DEPLOYMENT.md](./DEPLOYMENT.md))
 
 ---

@@ -18,8 +18,7 @@ This guide provides detailed instructions for deploying the Brotherhood-KOS Disc
    - [Option A: Railway (Recommended)](#option-a-railway-recommended)
    - [Option B: Traditional VPS/Server](#option-b-traditional-vpsserver)
 6. [Cloudflare Worker Setup (Optional)](#cloudflare-worker-setup-optional)
-7. [Telegram Integration (Optional)](#telegram-integration-optional)
-8. [Troubleshooting](#troubleshooting)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -38,7 +37,6 @@ This guide provides detailed instructions for deploying the Brotherhood-KOS Disc
 - **Railway account** for easy deployment
 - **Doppler account** for secrets management
 - **Cloudflare account** for Worker deployment
-- **Telegram Bot** for notifications
 
 ---
 
@@ -202,10 +200,6 @@ API_SECRET_KEY=generate_a_secure_random_string_here
 
 # Admin Password (Optional - for automated setup)
 ADMIN_PASSWORD=your_admin_password_here
-
-# Telegram Configuration (Optional)
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-TELEGRAM_CHAT_ID=your_telegram_chat_id
 
 # Environment
 NODE_ENV=production
@@ -378,42 +372,6 @@ curl https://your-worker-url.workers.dev/api/stats
 # Get history
 curl https://your-worker-url.workers.dev/api/history
 ```
-
----
-
-## Telegram Integration (Optional)
-
-To receive notifications when KOS entries are added or removed:
-
-### 1. Create Telegram Bot
-
-1. Message [@BotFather](https://t.me/BotFather) on Telegram
-2. Send `/newbot`
-3. Follow prompts to create bot
-4. Save the bot token
-
-### 2. Get Chat ID
-
-1. Start a chat with your bot
-2. Send any message
-3. Visit: `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
-4. Find `"chat":{"id":123456789}` in the response
-5. Save this chat ID
-
-### 3. Add to .env
-
-```env
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-TELEGRAM_CHAT_ID=your_telegram_chat_id
-```
-
-### 4. Restart Bot
-
-```bash
-pm2 restart brotherhood-kos
-```
-
-Test by adding/removing a KOS entry - you should receive a Telegram notification.
 
 ---
 

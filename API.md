@@ -602,5 +602,4 @@ Cloudflare Workers benefit from Cloudflare's built-in DDoS protection and rate l
 - Session tokens expire after 24 hours
 - Expired codes and sessions are automatically cleaned up
 - The API implements rate limiting to prevent abuse
-- The API automatically sends Telegram notifications (if configured) when KOS entries are added/removed
 - Admin functions (toggle bot status) are not available via API - use the Discord bot's `/manage` command instead

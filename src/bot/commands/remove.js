@@ -1,6 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { removeKosEntry, getKosEntries } from '../../services/kos.service.js';
-import { notifyKosRemoved } from '../../services/telegram.service.js';
 import { logger } from '../../utils/logger.js';
 
 export const data = new SlashCommandBuilder()
@@ -89,9 +88,6 @@ export async function execute(interaction) {
             interaction.user.tag,
             interaction.user.id
           );
-          
-          // Send Telegram notification (best-effort)
-          await notifyKosRemoved(removedEntry, interaction.user.tag);
           
           // Success message
           const successEmbed = new EmbedBuilder()

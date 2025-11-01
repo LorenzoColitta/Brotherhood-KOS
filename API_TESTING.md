@@ -39,10 +39,6 @@ SUPABASE_ANON_KEY=your_anon_key_here
 
 # API Configuration
 API_PORT=3000
-
-# Optional
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_optional
-TELEGRAM_CHAT_ID=your_telegram_chat_id_optional
 ```
 
 ### 3. Deploy Commands
@@ -570,7 +566,6 @@ chmod +x test-api.sh
 - Authentication codes expire after 60 minutes
 - Session tokens expire after 24 hours
 - Expired codes and sessions are automatically cleaned up every hour
-- The API automatically sends Telegram notifications if configured
 - All actions are logged in the audit trail
 
 ## Troubleshooting

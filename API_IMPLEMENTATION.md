@@ -109,7 +109,6 @@ Successfully implemented a full-featured REST API for the Brotherhood KOS system
 ✅ Health check endpoint
 ✅ Automatic cleanup of expired data
 ✅ Graceful shutdown handling
-✅ Telegram notifications (if configured)
 ✅ Audit logging
 
 ## Architecture Decisions
