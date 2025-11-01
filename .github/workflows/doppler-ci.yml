@@ -63,22 +63,22 @@ jobs:
           
           # Set Worker secrets using Doppler
           echo "Setting Worker secrets from Doppler..."
-          if doppler secrets get SUPABASE_URL --plain | npx wrangler secret put SUPABASE_URL; then
-            echo "✓ SUPABASE_URL set successfully"
-          else
-            echo "⚠ Failed to set SUPABASE_URL"
-          fi
           
-          if doppler secrets get SUPABASE_ANON_KEY --plain | npx wrangler secret put SUPABASE_ANON_KEY; then
-            echo "✓ SUPABASE_ANON_KEY set successfully"
-          else
-            echo "⚠ Failed to set SUPABASE_ANON_KEY"
-          fi
+          # Function to set a Worker secret
+          set_worker_secret() {
+            local secret_name=$1
+            if doppler secrets get "$secret_name" --plain | npx wrangler secret put "$secret_name"; then
+              echo "✓ $secret_name set successfully"
+              return 0
+            else
+              echo "⚠ Failed to set $secret_name"
+              return 1
+            fi
+          }
           
-          if doppler secrets get API_SECRET_KEY --plain | npx wrangler secret put API_SECRET_KEY; then
-            echo "✓ API_SECRET_KEY set successfully"
-          else
-            echo "⚠ Failed to set API_SECRET_KEY"
-          fi
+          # Set required secrets
+          set_worker_secret "SUPABASE_URL"
+          set_worker_secret "SUPABASE_ANON_KEY"
+          set_worker_secret "API_SECRET_KEY"
           
           echo "✅ Cloudflare Worker deployment completed"

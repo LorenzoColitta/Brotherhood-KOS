@@ -3,7 +3,7 @@
 # This script helps set up Doppler CLI in GitHub Codespaces or local environments
 # and provides interactive commands to run the bot with Doppler secrets
 
-set -e
+set -euo pipefail
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -67,10 +67,13 @@ setup_doppler_auth() {
     echo -e "${GREEN}✓${NC} Logged in to Doppler"
   elif [ "$auth_option" = "2" ]; then
     echo ""
+    echo -e "${YELLOW}⚠ WARNING: The service token will be stored in environment variables${NC}"
+    echo -e "${YELLOW}  and may be visible to other processes. Use interactive login for better security.${NC}"
+    echo ""
     echo "Enter your Doppler Service Token:"
     read -s DOPPLER_TOKEN
     export DOPPLER_TOKEN
-    echo -e "${GREEN}✓${NC} Service token configured"
+    echo -e "${GREEN}✓${NC} Service token configured (stored in DOPPLER_TOKEN env var)"
   else
     echo -e "${RED}Invalid option${NC}"
     exit 1
@@ -120,9 +123,15 @@ show_menu() {
       ;;
     5)
       echo ""
+      echo -e "${YELLOW}⚠ Enter a safe command. Special characters will be passed to the shell.${NC}"
       read -p "Enter your command (without 'doppler run --'): " custom_cmd
+      if [ -z "$custom_cmd" ]; then
+        echo -e "${RED}No command entered${NC}"
+        return
+      fi
       echo -e "${BLUE}Running: doppler run -- $custom_cmd${NC}"
-      doppler run -- $custom_cmd
+      # Note: This executes user input. Only run trusted commands.
+      doppler run -- sh -c "$custom_cmd"
       ;;
     6)
       echo -e "${GREEN}Goodbye!${NC}"
