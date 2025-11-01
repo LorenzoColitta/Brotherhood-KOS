@@ -7,7 +7,11 @@
   "scripts": {
     "start": "node src/bot/index.js",
     "deploy-commands": "node src/bot/deploy-commands.js",
-    "set-admin-password": "node scripts/set-admin-password.js"
+    "set-admin-password": "node scripts/set-admin-password.js",
+    "start:doppler": "doppler run -- node src/bot/index.js",
+    "deploy-commands:doppler": "doppler run -- node src/bot/deploy-commands.js",
+    "set-admin:doppler": "doppler run -- node scripts/set-admin-password.js",
+    "api-deploy:doppler": "doppler run -- wrangler deploy"
   },
   "keywords": [
     "discord",
