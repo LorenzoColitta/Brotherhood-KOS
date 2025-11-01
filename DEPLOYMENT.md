@@ -2,13 +2,21 @@
 
 This guide provides detailed instructions for deploying the Brotherhood-KOS Discord bot and associated components.
 
+## 🚀 Quick Links
+
+- **[Railway Deployment](./RAILWAY.md)** - Easiest option for beginners
+- **[Doppler Integration](./DOPPLER.md)** - Secure secrets management
+- **Traditional VPS** - Manual deployment (see below)
+
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
 2. [Supabase Setup](#supabase-setup)
 3. [Discord Bot Setup](#discord-bot-setup)
 4. [Bot Configuration](#bot-configuration)
-5. [Bot Deployment](#bot-deployment)
+5. [Deployment Options](#deployment-options)
+   - [Option A: Railway (Recommended)](#option-a-railway-recommended)
+   - [Option B: Traditional VPS/Server](#option-b-traditional-vpsserver)
 6. [Cloudflare Worker Setup (Optional)](#cloudflare-worker-setup-optional)
 7. [Telegram Integration (Optional)](#telegram-integration-optional)
 8. [Troubleshooting](#troubleshooting)
@@ -27,6 +35,8 @@ This guide provides detailed instructions for deploying the Brotherhood-KOS Disc
 
 ### Optional
 
+- **Railway account** for easy deployment
+- **Doppler account** for secrets management
 - **Cloudflare account** for Worker deployment
 - **Telegram Bot** for notifications
 
@@ -164,6 +174,12 @@ npm install
 
 ### 3. Configure Environment Variables
 
+**Option A: Using Doppler (Recommended)**
+
+See [DOPPLER.md](./DOPPLER.md) for complete Doppler setup instructions.
+
+**Option B: Using .env file (Traditional)**
+
 ```bash
 cp .env.example .env
 ```
@@ -184,6 +200,9 @@ SUPABASE_ANON_KEY=your_anon_key_from_supabase
 # API Security
 API_SECRET_KEY=generate_a_secure_random_string_here
 
+# Admin Password (Optional - for automated setup)
+ADMIN_PASSWORD=your_admin_password_here
+
 # Telegram Configuration (Optional)
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_CHAT_ID=your_telegram_chat_id
@@ -199,33 +218,59 @@ NODE_ENV=production
 
 ### 4. Set Admin Password
 
-Run the password setup script:
+**With environment variable (Doppler or .env):**
+If you set `ADMIN_PASSWORD` in your environment, run:
+```bash
+npm run set-admin-password
+# Or with Doppler:
+npm run set-admin:doppler
+```
 
+**Without environment variable (Interactive):**
+Run the password setup script and follow the prompts:
 ```bash
 npm run set-admin-password
 ```
 
-Follow the prompts to set a secure admin password. This password will be required to access the `/manage` command.
-
 ---
 
-## Bot Deployment
+## Deployment Options
 
-### 1. Deploy Commands
+### Option A: Railway (Recommended)
+
+Railway provides the easiest deployment experience with automatic builds and deployments.
+
+**📖 See [RAILWAY.md](./RAILWAY.md) for complete Railway deployment guide.**
+
+Quick steps:
+1. Push code to GitHub
+2. Connect repository to Railway
+3. Set environment variables in Railway dashboard
+4. Deploy automatically!
+
+### Option B: Traditional VPS/Server
+
+For deployment on a VPS or dedicated server.
+
+#### 1. Deploy Commands
 
 Register slash commands with Discord:
 
 ```bash
 npm run deploy-commands
+# Or with Doppler:
+npm run deploy-commands:doppler
 ```
 
 - **With DISCORD_GUILD_ID**: Commands appear instantly in your guild
 - **Without DISCORD_GUILD_ID**: Commands deploy globally (takes up to 1 hour)
 
-### 2. Start the Bot
+#### 2. Start the Bot (Development)
 
 ```bash
 npm start
+# Or with Doppler:
+npm run start:doppler
 ```
 
 The bot should now be online! You should see:
@@ -243,7 +288,7 @@ The bot should now be online! You should see:
 [INFO] Bot is ready to receive commands
 ```
 
-### 3. Test Commands
+#### 3. Test Commands
 
 In Discord, try:
 
@@ -253,15 +298,18 @@ In Discord, try:
 - `/list` - Verify entry appears
 - `/remove username:testuser` - Remove test entry
 
-### 4. Production Deployment
+#### 4. Production Deployment with PM2
 
 For production, use a process manager like **PM2**:
 
 ```bash
 npm install -g pm2
 
-# Start bot
+# Start bot (with .env)
 pm2 start src/bot/index.js --name brotherhood-kos
+
+# OR with Doppler
+pm2 start npm --name brotherhood-kos -- run start:doppler
 
 # Configure to start on system boot
 pm2 startup

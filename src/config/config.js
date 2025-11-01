@@ -22,6 +22,11 @@ export const config = {
     secretKey: process.env.API_SECRET_KEY,
   },
   
+  // Admin configuration
+  admin: {
+    password: process.env.ADMIN_PASSWORD, // Optional - for automated setup
+  },
+  
   // Telegram configuration (optional)
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN,
