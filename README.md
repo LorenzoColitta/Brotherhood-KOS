@@ -5,9 +5,9 @@ A comprehensive Kill On Sight (KOS) management system for the Brotherhood Discor
 ## ✨ Features
 
 - 🎯 **Discord Bot** - Slash commands for managing KOS entries
+- 🌐 **REST API** - Full-featured API with Discord authentication
 - 📊 **Database** - Supabase (PostgreSQL) backend with full audit trail
 - 🔔 **Notifications** - Optional Telegram integration for real-time alerts
-- 🌐 **Public API** - Cloudflare Worker for read-only public access
 - 🔒 **Admin Panel** - Secure DM-based admin interface
 - ⏰ **Auto-Expiry** - Automatic archival of expired entries
 - 📝 **History Tracking** - Complete exit registry and audit logs
@@ -39,6 +39,7 @@ A comprehensive Kill On Sight (KOS) management system for the Brotherhood Discor
 3. **Set up Supabase**
    - Create a new project at [supabase.com](https://supabase.com)
    - Go to the SQL Editor and run `src/database/schema.sql`
+   - Then run `src/database/api-auth-migration.sql` for API authentication tables
    - Get your project URL and API keys (from Settings → API)
 
 4. **Configure environment variables**
@@ -83,6 +84,15 @@ A comprehensive Kill On Sight (KOS) management system for the Brotherhood Discor
    npm run start:doppler
    ```
 
+8. **Start the API (optional)**
+   ```bash
+   # With .env
+   npm run start:api
+   
+   # With Doppler
+   npm run start:api:doppler
+   ```
+
 ## 📋 Available Commands
 
 ### Discord Bot Commands
@@ -91,22 +101,86 @@ A comprehensive Kill On Sight (KOS) management system for the Brotherhood Discor
 - `/remove <username>` - Remove a player from the KOS list
 - `/list [filter]` - View the KOS list with pagination
 - `/status` - View bot status and statistics
+- `/console` - Generate an authentication code for API access
 - `/manage` - Admin panel for bot management (requires password)
 
 ### NPM Scripts
 
 ```bash
-# Standard scripts
-npm start                    # Start the bot
+# Bot scripts
+npm start                    # Start the Discord bot
 npm run deploy-commands      # Deploy Discord slash commands
 npm run set-admin-password   # Set admin password interactively
 
+# API scripts
+npm run start:api            # Start the REST API server
+
 # Doppler scripts (recommended)
 npm run start:doppler        # Start bot with Doppler secrets
+npm run start:api:doppler    # Start API with Doppler secrets
 npm run deploy-commands:doppler
 npm run set-admin:doppler
 npm run api-deploy:doppler   # Deploy Cloudflare Worker
 ```
+
+## 🌐 REST API
+
+The Brotherhood KOS system includes a full-featured REST API for programmatic access.
+
+### Deployment Options
+
+**Option 1: Cloudflare Workers (Recommended for Production)**
+- Global edge deployment with CDN
+- Automatic scaling and DDoS protection
+- Free tier: 100,000 requests/day
+- See [CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md) for setup
+
+**Option 2: Express Server (Node.js)**
+- Traditional server deployment (VPS, Railway, etc.)
+- Better for local development
+- Uses `npm run start:api`
+
+### Quick Start
+
+1. Use the Discord bot to generate an auth code:
+   ```
+   /console
+   ```
+
+2. Exchange the code for a session token:
+   ```bash
+   # For local Express server
+   curl -X POST http://localhost:3000/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"code": "YOUR_CODE"}'
+   
+   # For Cloudflare Workers
+   curl -X POST https://your-worker.workers.dev/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"code": "YOUR_CODE"}'
+   ```
+
+3. Use the token for API requests:
+   ```bash
+   curl -X GET http://localhost:3000/api/kos \
+     -H "Authorization: Bearer YOUR_TOKEN"
+   ```
+
+### API Features
+
+- ✅ Full CRUD operations on KOS entries
+- ✅ History/exit registry access
+- ✅ Statistics endpoint
+- ✅ Discord-based authentication
+- ✅ Session management
+- ✅ CORS support
+- ✅ Edge deployment ready (Cloudflare Workers)
+
+### Documentation
+
+- **[API.md](./API.md)** - Complete API endpoint documentation
+- **[API_TESTING.md](./API_TESTING.md)** - Testing guide with examples
+- **[CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md)** - Cloudflare Workers deployment
 
 ## 🔧 Configuration
 
@@ -128,6 +202,7 @@ DISCORD_GUILD_ID=your_guild_id                    # For faster command deploymen
 ADMIN_PASSWORD=your_admin_password                # For automated admin setup
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token        # For notifications
 TELEGRAM_CHAT_ID=your_telegram_chat_id
+API_PORT=3000                                     # API server port (default: 3000)
 NODE_ENV=production
 ```
 
@@ -135,6 +210,9 @@ See `.env.example` for a complete template.
 
 ## 📚 Documentation
 
+- **[API.md](./API.md)** - Complete REST API documentation and examples
+- **[API_TESTING.md](./API_TESTING.md)** - API testing guide with examples
+- **[CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md)** - Deploy API to Cloudflare Workers
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Detailed deployment instructions for all components
 - **[RAILWAY.md](./RAILWAY.md)** - Deploy to Railway platform (recommended for beginners)
 - **[DOPPLER.md](./DOPPLER.md)** - Secrets management with Doppler integration
@@ -142,7 +220,9 @@ See `.env.example` for a complete template.
 
 ## 🏗️ Deployment Options
 
-### Option 1: Railway (Easiest)
+### Bot Deployment
+
+#### Option 1: Railway (Easiest)
 
 Railway provides one-click deployment with automatic builds:
 
@@ -155,7 +235,7 @@ Railway provides one-click deployment with automatic builds:
 
 See [RAILWAY.md](./RAILWAY.md) for detailed instructions.
 
-### Option 2: Traditional VPS/Server
+#### Option 2: Traditional VPS/Server
 
 Use PM2 for process management:
 
@@ -166,10 +246,41 @@ pm2 startup
 pm2 save
 ```
 
-### Option 3: Docker (Advanced)
+### API Deployment
+
+#### Option 1: Cloudflare Workers (Recommended)
+
+Deploy to the edge for global low-latency access:
 
 ```bash
-# Coming soon - Docker support planned
+# Install Wrangler
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Set secrets
+wrangler secret put SUPABASE_URL
+wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+
+# Deploy
+wrangler deploy
+```
+
+See [CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md) for complete setup guide.
+
+#### Option 2: Traditional Server (Node.js/Express)
+
+Deploy alongside the bot or on a separate server:
+
+```bash
+npm run start:api
+```
+
+For production with PM2:
+
+```bash
+pm2 start src/api/server.js --name brotherhood-kos-api
 ```
 
 ## 🏛️ Architecture
@@ -177,7 +288,10 @@ pm2 save
 ```
 Brotherhood-KOS/
 ├── src/
-│   ├── api/              # Cloudflare Worker API
+│   ├── api/              # API implementations
+│   │   ├── server.js     # Express.js server (Node.js)
+│   │   ├── worker-full.js # Cloudflare Worker (edge)
+│   │   └── worker-readonly.js # Old read-only worker (backup)
 │   ├── bot/              # Discord bot
 │   │   ├── commands/     # Slash command implementations
 │   │   └── events/       # Discord event handlers

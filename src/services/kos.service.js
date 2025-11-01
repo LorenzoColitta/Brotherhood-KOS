@@ -135,6 +135,35 @@ export async function getKosEntries(limit = 100, offset = 0) {
 }
 
 /**
+ * Get a specific KOS entry by username
+ */
+export async function getKosEntryByUsername(username) {
+  try {
+    const supabase = getSupabase();
+    
+    const { data, error } = await supabase
+      .from('kos_entries')
+      .select('*')
+      .ilike('roblox_username', username)
+      .eq('is_active', true)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned
+        return null;
+      }
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    logger.error('Error fetching KOS entry:', error.message);
+    throw error;
+  }
+}
+
+/**
  * Get exit registry (history of removed entries)
  */
 export async function getExitRegistry(limit = 100, offset = 0) {

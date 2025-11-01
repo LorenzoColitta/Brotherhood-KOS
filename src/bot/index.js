@@ -6,6 +6,7 @@ import { config, validateConfig } from '../config/config.js';
 import { initializeSupabase, testConnection } from '../database/connection.js';
 import { archiveExpiredEntries } from '../services/kos.service.js';
 import { cleanupExpiredSessions } from '../services/admin.service.js';
+import { cleanupExpired } from '../services/auth.service.js';
 import { logger } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -92,6 +93,15 @@ setInterval(async () => {
 // Clean up expired admin sessions every hour
 setInterval(() => {
   cleanupExpiredSessions();
+}, 60 * 60 * 1000);
+
+// Clean up expired API auth codes and sessions every hour
+setInterval(async () => {
+  try {
+    await cleanupExpired();
+  } catch (error) {
+    logger.error('Error in scheduled API auth cleanup:', error.message);
+  }
 }, 60 * 60 * 1000);
 
 // Handle graceful shutdown
