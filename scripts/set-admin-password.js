@@ -3,14 +3,18 @@
 /**
  * Script to set the admin password for the Brotherhood-KOS bot
  * 
- * Usage: node scripts/set-admin-password.js
+ * Usage: 
+ *   node scripts/set-admin-password.js
+ *   OR with Doppler: doppler run -- node scripts/set-admin-password.js
  * 
  * This script will:
- * 1. Prompt for a new admin password
- * 2. Hash the password using SHA-256
- * 3. Store the hash in the bot_config table in Supabase
+ * 1. Use ADMIN_PASSWORD from environment (Doppler) if available
+ * 2. Otherwise, prompt for a new admin password
+ * 3. Hash the password using SHA-256
+ * 4. Store the hash in the bot_config table in Supabase
  * 
- * Note: This script requires SUPABASE_SERVICE_ROLE_KEY to be set in .env
+ * Note: This script requires SUPABASE_SERVICE_ROLE_KEY to be set
+ * For Doppler users: Set ADMIN_PASSWORD in your Doppler config to skip prompting
  */
 
 import { createInterface } from 'readline';
@@ -95,20 +99,34 @@ async function main() {
     logger.info('Connecting to database...');
     initializeSupabase();
     
-    // Get password from user
-    const password = await prompt('Enter new admin password: ', true);
+    let password;
     
-    if (!password || password.length < 8) {
-      logger.error('Password must be at least 8 characters long.');
-      process.exit(1);
-    }
-    
-    // Confirm password
-    const confirmPassword = await prompt('Confirm admin password: ', true);
-    
-    if (password !== confirmPassword) {
-      logger.error('Passwords do not match.');
-      process.exit(1);
+    // Check if ADMIN_PASSWORD is set in environment (from Doppler or .env)
+    if (process.env.ADMIN_PASSWORD) {
+      logger.info('Using ADMIN_PASSWORD from environment (Doppler/env)...');
+      password = process.env.ADMIN_PASSWORD;
+      
+      if (password.length < 8) {
+        logger.error('ADMIN_PASSWORD must be at least 8 characters long.');
+        process.exit(1);
+      }
+    } else {
+      // Prompt for password if not in environment
+      logger.info('ADMIN_PASSWORD not found in environment, prompting for input...');
+      password = await prompt('Enter new admin password: ', true);
+      
+      if (!password || password.length < 8) {
+        logger.error('Password must be at least 8 characters long.');
+        process.exit(1);
+      }
+      
+      // Confirm password
+      const confirmPassword = await prompt('Confirm admin password: ', true);
+      
+      if (password !== confirmPassword) {
+        logger.error('Passwords do not match.');
+        process.exit(1);
+      }
     }
     
     // Set the password
