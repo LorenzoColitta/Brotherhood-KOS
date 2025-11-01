@@ -84,17 +84,24 @@ After your first deployment, you need to register Discord slash commands:
    railway run npm run deploy-commands
    ```
 
-**Option B: Add to Build Process**
+**Option B: Add to Build Process (Not Recommended)**
 
-You can add a post-deploy script to automatically deploy commands. In `package.json`, add:
+⚠️ **Warning**: Automatically deploying commands on every build is generally not recommended as it:
+- Will deploy commands during local development with `npm install`
+- Can cause rate limiting issues with Discord's API
+- May deploy unintended changes
 
-```json
-"scripts": {
-  "postinstall": "node src/bot/deploy-commands.js"
-}
+If you still want to proceed, you can add a post-deploy hook (Railway-specific):
+
+Create a `railway.toml` file:
+```toml
+[deploy]
+startCommand = "npm run deploy-commands && npm start"
 ```
 
-⚠️ **Warning**: This will deploy commands on every build. Consider using Option A for production.
+This deploys commands only during Railway deployments, not local installs.
+
+**Recommendation**: Use Option A (manual deployment via Railway CLI) for production.
 
 ### 5. Set Admin Password (if not using ADMIN_PASSWORD env var)
 
