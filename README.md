@@ -7,7 +7,6 @@ A comprehensive Kill On Sight (KOS) management system for the Brotherhood Discor
 - 🎯 **Discord Bot** - Slash commands for managing KOS entries
 - 🌐 **REST API** - Full-featured API with Discord authentication
 - 📊 **Database** - Supabase (PostgreSQL) backend with full audit trail
-- 🔔 **Notifications** - Optional Telegram integration for real-time alerts
 - 🔒 **Admin Panel** - Secure DM-based admin interface
 - ⏰ **Auto-Expiry** - Automatic archival of expired entries
 - 📝 **History Tracking** - Complete exit registry and audit logs
@@ -200,8 +199,6 @@ API_SECRET_KEY=your_generated_secret_key
 ```env
 DISCORD_GUILD_ID=your_guild_id                    # For faster command deployment
 ADMIN_PASSWORD=your_admin_password                # For automated admin setup
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token        # For notifications
-TELEGRAM_CHAT_ID=your_telegram_chat_id
 API_PORT=3000                                     # API server port (default: 3000)
 NODE_ENV=production
 ```

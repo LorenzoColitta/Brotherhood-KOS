@@ -38,10 +38,6 @@ Add the following secrets to your Doppler project:
 **Admin Configuration:**
 - `ADMIN_PASSWORD` - Your bot admin password (used by set-admin-password script)
 
-**Telegram Configuration (Optional):**
-- `TELEGRAM_BOT_TOKEN` - Your Telegram bot token
-- `TELEGRAM_CHAT_ID` - Your Telegram chat ID
-
 **Environment:**
 - `NODE_ENV` - Set to `production` or `development`
 
