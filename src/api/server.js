@@ -6,7 +6,8 @@ import { verifyAuthCode, createApiSession, verifyApiSession, revokeApiSession, c
 import { 
   addKosEntry, 
   removeKosEntry, 
-  getKosEntries, 
+  getKosEntries,
+  getKosEntryByUsername,
   getExitRegistry, 
   getStatistics, 
   getBotStatus 
@@ -142,8 +143,7 @@ app.get('/api/kos/:username', authenticate, async (req, res) => {
   try {
     const { username } = req.params;
     
-    const { entries } = await getKosEntries(1000);
-    const entry = entries.find(e => e.roblox_username.toLowerCase() === username.toLowerCase());
+    const entry = await getKosEntryByUsername(username);
     
     if (!entry) {
       return res.status(404).json({ error: 'Not Found', message: 'KOS entry not found' });
@@ -224,8 +224,7 @@ app.delete('/api/kos/:username', authenticate, async (req, res) => {
     const { username } = req.params;
     
     // Check if entry exists
-    const { entries } = await getKosEntries(1000);
-    const entry = entries.find(e => e.roblox_username.toLowerCase() === username.toLowerCase());
+    const entry = await getKosEntryByUsername(username);
     
     if (!entry) {
       return res.status(404).json({ error: 'Not Found', message: 'KOS entry not found' });

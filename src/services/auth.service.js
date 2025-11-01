@@ -155,11 +155,15 @@ export async function verifyApiSession(token) {
       return { valid: false };
     }
     
-    // Update last used
-    await supabase
-      .from('api_sessions')
-      .update({ last_used_at: new Date().toISOString() })
-      .eq('id', data.id);
+    // Update last used (best-effort, don't fail if this fails)
+    try {
+      await supabase
+        .from('api_sessions')
+        .update({ last_used_at: new Date().toISOString() })
+        .eq('id', data.id);
+    } catch (updateError) {
+      logger.warn('Failed to update last_used_at:', updateError.message);
+    }
     
     return {
       valid: true,

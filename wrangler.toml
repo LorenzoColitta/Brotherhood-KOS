@@ -1,12 +1,12 @@
 name = "brotherhood-kos-api"
-main = "src/api/worker.js"
+main = "src/api/worker-full.js"
 compatibility_date = "2024-01-01"
 
 # Environment variables (set these via wrangler secret or dashboard)
 # These are placeholders - actual values should be set via:
 # wrangler secret put SUPABASE_URL
+# wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 # wrangler secret put SUPABASE_ANON_KEY
-# wrangler secret put API_SECRET_KEY
 
 [vars]
 # Non-sensitive variables can go here
@@ -17,6 +17,9 @@ compatibility_date = "2024-01-01"
 # 2. Login: wrangler login
 # 3. Set secrets:
 #    wrangler secret put SUPABASE_URL
+#    wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 #    wrangler secret put SUPABASE_ANON_KEY
-#    wrangler secret put API_SECRET_KEY
 # 4. Deploy: wrangler deploy
+#
+# Note: The full API worker uses SERVICE_ROLE_KEY for write operations
+# The old worker.js (read-only) used ANON_KEY

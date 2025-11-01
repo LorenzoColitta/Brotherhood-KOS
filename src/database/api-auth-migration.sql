@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS api_auth_codes (
 -- API Sessions Table
 CREATE TABLE IF NOT EXISTS api_sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    token VARCHAR(255) NOT NULL UNIQUE,
+    token VARCHAR(64) NOT NULL UNIQUE,
     discord_user_id VARCHAR(255) NOT NULL,
     discord_username VARCHAR(255) NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,

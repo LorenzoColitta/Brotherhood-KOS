@@ -127,6 +127,19 @@ npm run api-deploy:doppler   # Deploy Cloudflare Worker
 
 The Brotherhood KOS system includes a full-featured REST API for programmatic access.
 
+### Deployment Options
+
+**Option 1: Cloudflare Workers (Recommended for Production)**
+- Global edge deployment with CDN
+- Automatic scaling and DDoS protection
+- Free tier: 100,000 requests/day
+- See [CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md) for setup
+
+**Option 2: Express Server (Node.js)**
+- Traditional server deployment (VPS, Railway, etc.)
+- Better for local development
+- Uses `npm run start:api`
+
 ### Quick Start
 
 1. Use the Discord bot to generate an auth code:
@@ -136,7 +149,13 @@ The Brotherhood KOS system includes a full-featured REST API for programmatic ac
 
 2. Exchange the code for a session token:
    ```bash
+   # For local Express server
    curl -X POST http://localhost:3000/api/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"code": "YOUR_CODE"}'
+   
+   # For Cloudflare Workers
+   curl -X POST https://your-worker.workers.dev/api/auth/login \
      -H "Content-Type: application/json" \
      -d '{"code": "YOUR_CODE"}'
    ```
@@ -155,8 +174,13 @@ The Brotherhood KOS system includes a full-featured REST API for programmatic ac
 - ✅ Discord-based authentication
 - ✅ Session management
 - ✅ CORS support
+- ✅ Edge deployment ready (Cloudflare Workers)
 
-For complete API documentation, see [API.md](./API.md).
+### Documentation
+
+- **[API.md](./API.md)** - Complete API endpoint documentation
+- **[API_TESTING.md](./API_TESTING.md)** - Testing guide with examples
+- **[CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md)** - Cloudflare Workers deployment
 
 ## 🔧 Configuration
 
@@ -187,6 +211,8 @@ See `.env.example` for a complete template.
 ## 📚 Documentation
 
 - **[API.md](./API.md)** - Complete REST API documentation and examples
+- **[API_TESTING.md](./API_TESTING.md)** - API testing guide with examples
+- **[CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md)** - Deploy API to Cloudflare Workers
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Detailed deployment instructions for all components
 - **[RAILWAY.md](./RAILWAY.md)** - Deploy to Railway platform (recommended for beginners)
 - **[DOPPLER.md](./DOPPLER.md)** - Secrets management with Doppler integration
@@ -194,7 +220,9 @@ See `.env.example` for a complete template.
 
 ## 🏗️ Deployment Options
 
-### Option 1: Railway (Easiest)
+### Bot Deployment
+
+#### Option 1: Railway (Easiest)
 
 Railway provides one-click deployment with automatic builds:
 
@@ -207,7 +235,7 @@ Railway provides one-click deployment with automatic builds:
 
 See [RAILWAY.md](./RAILWAY.md) for detailed instructions.
 
-### Option 2: Traditional VPS/Server
+#### Option 2: Traditional VPS/Server
 
 Use PM2 for process management:
 
@@ -218,10 +246,41 @@ pm2 startup
 pm2 save
 ```
 
-### Option 3: Docker (Advanced)
+### API Deployment
+
+#### Option 1: Cloudflare Workers (Recommended)
+
+Deploy to the edge for global low-latency access:
 
 ```bash
-# Coming soon - Docker support planned
+# Install Wrangler
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Set secrets
+wrangler secret put SUPABASE_URL
+wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+
+# Deploy
+wrangler deploy
+```
+
+See [CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md) for complete setup guide.
+
+#### Option 2: Traditional Server (Node.js/Express)
+
+Deploy alongside the bot or on a separate server:
+
+```bash
+npm run start:api
+```
+
+For production with PM2:
+
+```bash
+pm2 start src/api/server.js --name brotherhood-kos-api
 ```
 
 ## 🏛️ Architecture
@@ -229,7 +288,10 @@ pm2 save
 ```
 Brotherhood-KOS/
 ├── src/
-│   ├── api/              # Cloudflare Worker API
+│   ├── api/              # API implementations
+│   │   ├── server.js     # Express.js server (Node.js)
+│   │   ├── worker-full.js # Cloudflare Worker (edge)
+│   │   └── worker-readonly.js # Old read-only worker (backup)
 │   ├── bot/              # Discord bot
 │   │   ├── commands/     # Slash command implementations
 │   │   └── events/       # Discord event handlers
