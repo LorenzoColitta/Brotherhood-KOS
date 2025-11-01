@@ -68,7 +68,7 @@ jobs:
           # Function to set a Worker secret
           set_worker_secret() {
             local secret_name=$1
-            local secret_value="${!secret_name}"
+            local secret_value=$(printenv "$secret_name" || echo "")
             if [ -n "$secret_value" ]; then
               echo "$secret_value" | npx wrangler secret put "$secret_name"
               echo "✓ $secret_name set successfully"
