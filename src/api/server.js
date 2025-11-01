@@ -14,7 +14,6 @@ import {
   getBotStatus 
 } from '../services/kos.service.js';
 import { getRobloxUserInfo } from '../services/roblox.service.js';
-import { notifyKosAdded, notifyKosRemoved } from '../services/telegram.service.js';
 import ms from 'ms';
 
 dotenv.config();
@@ -221,9 +220,6 @@ app.post('/api/kos', authenticate, async (req, res) => {
       thumbnailUrl: robloxInfo.thumbnailUrl,
     });
     
-    // Send Telegram notification (best-effort)
-    await notifyKosAdded(entry).catch(() => {});
-    
     res.status(201).json({
       success: true,
       message: 'KOS entry added successfully',
@@ -257,9 +253,6 @@ app.delete('/api/kos/:username', authenticate, async (req, res) => {
       req.user.username,
       req.user.userId
     );
-    
-    // Send Telegram notification (best-effort)
-    await notifyKosRemoved(removedEntry, req.user.username).catch(() => {});
     
     res.json({
       success: true,

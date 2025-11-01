@@ -27,12 +27,6 @@ export const config = {
     password: process.env.ADMIN_PASSWORD, // Optional - for automated setup
   },
   
-  // Telegram configuration (optional)
-  telegram: {
-    botToken: process.env.TELEGRAM_BOT_TOKEN,
-    chatId: process.env.TELEGRAM_CHAT_ID,
-  },
-  
   // Environment
   nodeEnv: process.env.NODE_ENV || 'development',
 };

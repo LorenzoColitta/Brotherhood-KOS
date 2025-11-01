@@ -1,7 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getRobloxUserInfo } from '../../services/roblox.service.js';
 import { addKosEntry } from '../../services/kos.service.js';
-import { notifyKosAdded } from '../../services/telegram.service.js';
 import { logger } from '../../utils/logger.js';
 import ms from 'ms';
 
@@ -121,9 +120,6 @@ export async function execute(interaction) {
             expiryDate: expiryDate,
             thumbnailUrl: robloxInfo.thumbnailUrl,
           });
-          
-          // Send Telegram notification (best-effort)
-          await notifyKosAdded(entry);
           
           // Success message
           const successEmbed = new EmbedBuilder()
