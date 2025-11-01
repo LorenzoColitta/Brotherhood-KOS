@@ -37,8 +37,12 @@ jobs:
         run: |
           # Validate that Doppler secrets are accessible
           echo "Validating Doppler configuration..."
-          doppler secrets --only-names || echo "Warning: Could not list secrets"
-          echo "✅ Doppler integration validated"
+          if doppler secrets --only-names > /dev/null 2>&1; then
+            echo "✅ Doppler authentication successful"
+          else
+            echo "❌ Failed to authenticate with Doppler. Please check DOPPLER_TOKEN secret."
+            exit 1
+          fi
 
       - name: Deploy Discord commands
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
