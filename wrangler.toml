@@ -1,0 +1,22 @@
+name = "brotherhood-kos-api"
+main = "src/api/worker.js"
+compatibility_date = "2024-01-01"
+
+# Environment variables (set these via wrangler secret or dashboard)
+# These are placeholders - actual values should be set via:
+# wrangler secret put SUPABASE_URL
+# wrangler secret put SUPABASE_ANON_KEY
+# wrangler secret put API_SECRET_KEY
+
+[vars]
+# Non-sensitive variables can go here
+# SUPABASE_URL = "https://your-project.supabase.co"
+
+# To deploy:
+# 1. Install wrangler: npm install -g wrangler
+# 2. Login: wrangler login
+# 3. Set secrets:
+#    wrangler secret put SUPABASE_URL
+#    wrangler secret put SUPABASE_ANON_KEY
+#    wrangler secret put API_SECRET_KEY
+# 4. Deploy: wrangler deploy
