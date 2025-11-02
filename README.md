@@ -5,7 +5,6 @@ A comprehensive Kill On Sight (KOS) management system for the Brotherhood Discor
 ## ✨ Features
 
 - 🎯 **Discord Bot** - Slash commands for managing KOS entries
-- 🌐 **REST API** - Full-featured API with Discord authentication
 - 📊 **Database** - Supabase (PostgreSQL) backend with full audit trail
 - 🔒 **Admin Panel** - Secure DM-based admin interface
 - ⏰ **Auto-Expiry** - Automatic archival of expired entries
@@ -121,60 +120,6 @@ npm run deploy-commands:doppler
 npm run set-admin:doppler
 ```
 
-## 🌐 REST API
-
-The Brotherhood KOS system includes a full-featured REST API for programmatic access.
-
-### Deployment Options
-
-**Option 1: Cloudflare Builds (Recommended for Production)**
-- Automatic deployment on git push to main branch
-- Global edge deployment with CDN
-- Automatic scaling and DDoS protection
-- No CI/CD authentication hassles
-- See [CLOUDFLARE-BUILDS-INSTRUCTIONS.md](./CLOUDFLARE-BUILDS-INSTRUCTIONS.md) for setup
-
-**Option 2: Express Server (Node.js)**
-- Traditional server deployment (VPS, Railway, etc.)
-- Better for local development
-- Uses `npm run start:api`
-
-### Quick Start
-
-1. Generate an API key:
-   - Set `API_SECRET_KEY` environment variable in Cloudflare Dashboard
-   - Use this key for x-api-key header authentication
-
-2. Make API requests:
-   ```bash
-   # Health check (no authentication required)
-   curl https://your-worker.workers.dev/health
-   
-   # List messages (requires x-api-key)
-   curl -H "x-api-key: YOUR_API_SECRET_KEY" \
-        https://your-worker.workers.dev/messages
-   
-   # Create a message (requires x-api-key)
-   curl -X POST https://your-worker.workers.dev/messages \
-     -H "Content-Type: application/json" \
-     -H "x-api-key: YOUR_API_SECRET_KEY" \
-     -d '{"content": "Hello", "author": "User"}'
-   ```
-
-### API Features
-
-- ✅ Simple x-api-key authentication
-- ✅ Message storage and retrieval
-- ✅ Health check endpoint
-- ✅ CORS support
-- ✅ Automatic deployment via Cloudflare Builds
-- ✅ Edge deployment with global CDN
-
-### Documentation
-
-- **[CLOUDFLARE-BUILDS-INSTRUCTIONS.md](./CLOUDFLARE-BUILDS-INSTRUCTIONS.md)** - Cloudflare Builds setup (Recommended)
-- **[API.md](./API.md)** - Complete API endpoint documentation
-- **[API_TESTING.md](./API_TESTING.md)** - Testing guide with examples
 
 ## 🔧 Configuration
 
@@ -202,9 +147,6 @@ See `.env.example` for a complete template.
 
 ## 📚 Documentation
 
-- **[CLOUDFLARE-BUILDS-INSTRUCTIONS.md](./CLOUDFLARE-BUILDS-INSTRUCTIONS.md)** - Cloudflare Builds deployment (Recommended for Workers)
-- **[API.md](./API.md)** - Complete REST API documentation and examples
-- **[API_TESTING.md](./API_TESTING.md)** - API testing guide with examples
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Detailed deployment instructions for all components
 - **[RAILWAY.md](./RAILWAY.md)** - Deploy to Railway platform (recommended for beginners)
 - **[DOPPLER.md](./DOPPLER.md)** - Secrets management with Doppler integration
