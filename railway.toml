@@ -3,6 +3,6 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "bash -lc 'curl -Ls https://cli.doppler.com/install.sh | sh && bash -lc 'doppler run --token \"$DOPPLER_SERVICE_TOKEN\" -- npm start'"
+startCommand = "bash -lc 'curl -Ls https://cli.doppler.com/install.sh | sh && doppler run --token \"$DOPPLER_SERVICE_TOKEN\" -- npm start'"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
