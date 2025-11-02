@@ -60,15 +60,17 @@ jobs:
           doppler run --token "$DOPPLER_SERVICE_TOKEN" -- bash -lc "npm ci && npm run build && npx wrangler deploy --account-id $CF_ACCOUNT_ID"
 
       - name: "Optional: Trigger Railway redeploy (if RAILWAY_TOKEN & project/service IDs provided)"
-        if: ${{ secrets.RAILWAY_TOKEN != '' && secrets.RAILWAY_PROJECT_ID != '' && secrets.RAILWAY_SERVICE_ID != '' }}
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
         run: |
-          echo "Triggering Railway redeploy for project $RAILWAY_PROJECT_ID service $RAILWAY_SERVICE_ID"
-          curl -s -X POST "https://backboard.railway.app/project/${RAILWAY_PROJECT_ID}/service/${RAILWAY_SERVICE_ID}/deploy" \
-            -H "Authorization: Bearer $RAILWAY_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{}' \
-            | jq -c '.' || true
+          if [ -n "$RAILWAY_TOKEN" ] && [ -n "$RAILWAY_PROJECT_ID" ] && [ -n "$RAILWAY_SERVICE_ID" ]; then
+            echo "Triggering Railway redeploy for project $RAILWAY_PROJECT_ID service $RAILWAY_SERVICE_ID"
+            curl -s -X POST "https://backboard.railway.app/project/${RAILWAY_PROJECT_ID}/service/${RAILWAY_SERVICE_ID}/deploy" \
+              -H "Authorization: Bearer $RAILWAY_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{}' || echo "Railway redeploy request completed"
+          else
+            echo "Skipping Railway redeploy - required environment variables not set"
+          fi
