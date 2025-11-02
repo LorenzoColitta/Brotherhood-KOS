@@ -5,6 +5,7 @@
   "main": "src/bot/index.js",
   "type": "module",
   "scripts": {
+    "prestart": "command -v doppler >/dev/null 2>&1 || (curl -Ls --tlsv1.2 --proto '=https' --retry 3 https://cli.doppler.com/install.sh | sh || true)",
     "start": "node src/bot/index.js",
     "start:api": "node src/api/server.js",
     "deploy-commands": "node src/bot/deploy-commands.js",

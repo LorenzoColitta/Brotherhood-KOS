@@ -1,0 +1,8 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "bash -c 'curl -Ls --tlsv1.2 --proto \"=https\" --retry 3 https://cli.doppler.com/install.sh | sh && doppler run -- npm start'"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
