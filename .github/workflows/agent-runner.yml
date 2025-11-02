@@ -1,0 +1,35 @@
+name: Run repository agent
+
+# Triggers: manual dispatch, and daily scheduled run
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *' # daily at 06:00 UTC (adjust as needed)
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  run-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install agent dependencies
+        run: cd scr/agent && npm ci
+
+      - name: Run agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scr/agent/index.js
