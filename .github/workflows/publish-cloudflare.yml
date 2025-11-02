@@ -1,0 +1,67 @@
+name: Publish Cloudflare Worker (Docker)
+
+# Trigger workflow on push to main branch or manual dispatch
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-cloudflare-worker:
+    runs-on: ubuntu-latest
+
+    # Set a reasonable timeout to prevent hanging builds
+    timeout-minutes: 15
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Build the Docker image using Dockerfile.cloudflare
+      # This creates a self-contained environment with Node, Doppler,
+      # and wrangler
+      - name: Build Docker image
+        run: |
+          echo "Building Docker image for Cloudflare Worker deployment..."
+          docker build -f Dockerfile.cloudflare \
+            -t cloudflare-worker-deploy:latest .
+          echo "✅ Docker image built successfully"
+
+      # Step 3: Run the deployment inside the container
+      # Passes required secrets as environment variables
+      # Uses Doppler to inject secrets at runtime for secure
+      # deployment. The --rm flag ensures the container is removed
+      # after execution
+      - name: Deploy Cloudflare Worker
+        env:
+          # Doppler service token for secrets management
+          DOPPLER_SERVICE_TOKEN: ${{ secrets.DOPPLER_SERVICE_TOKEN }}
+          # Cloudflare API token for authentication
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          # Cloudflare account ID for worker deployment
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          echo "Starting Cloudflare Worker deployment..."
+          docker run --rm \
+            -e DOPPLER_SERVICE_TOKEN="$DOPPLER_SERVICE_TOKEN" \
+            -e CF_API_TOKEN="$CF_API_TOKEN" \
+            -e CF_ACCOUNT_ID="$CF_ACCOUNT_ID" \
+            cloudflare-worker-deploy:latest \
+            "doppler run --token \"\$DOPPLER_SERVICE_TOKEN\" -- \
+            bash -lc 'npm ci && npm run build && \
+            npx wrangler publish --account-id \$CF_ACCOUNT_ID'"
+          echo "✅ Cloudflare Worker deployed successfully"
+
+      # Step 4: Deployment summary
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "================================================"
+          echo "Cloudflare Worker Deployment Summary"
+          echo "================================================"
+          echo "✅ Worker deployed to Cloudflare"
+          echo "✅ Using Doppler for secrets management"
+          echo "✅ Docker-based deployment (avoids dpkg issues)"
+          echo "================================================"

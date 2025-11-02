@@ -1,0 +1,36 @@
+# Dockerfile for Cloudflare Worker deployments
+# Purpose: Self-contained build/publish image with rootless Doppler and wrangler
+# Addresses: Cloudflare build runner dpkg installation issues
+
+# Use Node 18 Alpine as base for lightweight image
+FROM node:18-alpine
+
+# Install required tools: bash for shell scripts, curl for downloads, tar for extraction, gnupg for verification
+RUN apk add --no-cache bash curl tar gnupg
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files and install production dependencies
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy entire repository into the container
+COPY . .
+
+# Download and install Doppler CLI as a local binary (rootless installation)
+# This avoids dpkg issues on Cloudflare build runners
+# Using amd64 architecture for compatibility
+RUN curl -Ls --tlsv1.2 --proto "=https" --retry 3 \
+    https://github.com/DopplerHQ/cli/releases/latest/download/doppler_linux_amd64.tar.gz \
+    -o /tmp/doppler.tar.gz && \
+    tar -xzf /tmp/doppler.tar.gz -C /usr/local/bin && \
+    chmod +x /usr/local/bin/doppler && \
+    rm /tmp/doppler.tar.gz
+
+# Install wrangler globally for Cloudflare Worker deployments
+RUN npm install -g wrangler
+
+# Set entrypoint to shell for flexible command execution
+# The workflow will pass the actual publish command at runtime
+ENTRYPOINT ["/bin/sh", "-c"]
