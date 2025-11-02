@@ -320,57 +320,54 @@ pm2 restart brotherhood-kos
 
 ## Cloudflare Worker Setup (Optional)
 
-The Worker provides a public read-only API for KOS data.
+The Worker provides a simple API for messages with x-api-key authentication.
 
-### 1. Install Wrangler
+### Option 1: Cloudflare Builds (Recommended)
+
+Cloudflare Builds automatically deploys your Worker on git push to main:
+
+1. **Connect Repository to Cloudflare Builds**
+   - See [CLOUDFLARE-BUILDS-INSTRUCTIONS.md](./CLOUDFLARE-BUILDS-INSTRUCTIONS.md) for complete setup
+
+2. **Configure Runtime Secrets**
+   - Set in Cloudflare Dashboard → Workers & Pages → Settings → Environment Variables:
+     - `SUPABASE_URL` - Your Supabase project URL
+     - `SUPABASE_ANON_KEY` - Your Supabase anon key
+     - `API_SECRET_KEY` - Generate a secure random string
+
+3. **Deploy**
+   - Push to main branch
+   - Cloudflare Builds automatically builds and deploys
+
+### Option 2: Manual Deployment with Wrangler (Legacy)
+
+For manual control or testing:
 
 ```bash
+# Install Wrangler
 npm install -g wrangler
-```
 
-### 2. Login to Cloudflare
-
-```bash
+# Login to Cloudflare
 wrangler login
-```
 
-### 3. Configure Worker
-
-Edit `wrangler.toml` if needed, or set secrets:
-
-```bash
+# Set secrets
 wrangler secret put SUPABASE_URL
-# Enter: https://your-project.supabase.co
-
 wrangler secret put SUPABASE_ANON_KEY
-# Enter: your_anon_key
-
 wrangler secret put API_SECRET_KEY
-# Enter: your_api_secret_key
-```
 
-### 4. Deploy Worker
-
-```bash
+# Deploy
 wrangler deploy
 ```
 
-The Worker will be deployed to a URL like: `https://brotherhood-kos-api.your-subdomain.workers.dev`
-
-### 5. Test Worker API
+### Test Worker API
 
 ```bash
-# List entries
-curl https://your-worker-url.workers.dev/api/kos
+# Health check (no authentication)
+curl https://your-worker.workers.dev/health
 
-# Get specific entry
-curl https://your-worker-url.workers.dev/api/kos/username
-
-# Get statistics
-curl https://your-worker-url.workers.dev/api/stats
-
-# Get history
-curl https://your-worker-url.workers.dev/api/history
+# List messages (requires x-api-key)
+curl -H "x-api-key: YOUR_API_SECRET_KEY" \
+     https://your-worker.workers.dev/messages
 ```
 
 ---

@@ -55,33 +55,7 @@ jobs:
           doppler run -- node src/bot/deploy-commands.js
           echo "✅ Discord commands deployed"
 
-      - name: Deploy Cloudflare Worker
+      - name: Cloudflare Builds notice
         if: github.ref == 'refs/heads/main'
-        env:
-          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          # Deploy Worker with Doppler secrets
-          doppler run -- npx wrangler deploy
-          
-          # Set Worker secrets using Doppler
-          echo "Setting Worker secrets from Doppler..."
-          
-          # Function to set a Worker secret
-          set_worker_secret() {
-            local secret_name=$1
-            if doppler secrets get "$secret_name" --plain | npx wrangler secret put "$secret_name"; then
-              echo "✓ $secret_name set successfully"
-              return 0
-            else
-              echo "⚠ Failed to set $secret_name"
-              return 1
-            fi
-          }
-          
-          # Set required secrets
-          set_worker_secret "SUPABASE_URL"
-          set_worker_secret "SUPABASE_ANON_KEY"
-          set_worker_secret "API_SECRET_KEY"
-          
-          echo "✅ Cloudflare Worker deployment completed"
+          echo "Using Cloudflare Builds for Worker deployment. Remove wrangler deploy steps from CI."

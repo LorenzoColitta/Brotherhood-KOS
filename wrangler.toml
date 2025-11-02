@@ -1,25 +1,9 @@
-name = "brotherhood-kos-api"
-main = "src/api/worker-full.js"
-compatibility_date = "2024-01-01"
+name = "brotherhood-kos-worker"
+main = "dist/worker.js"
+compatibility_date = "2025-11-02"
 
-# Environment variables (set these via wrangler secret or dashboard)
-# These are placeholders - actual values should be set via:
-# wrangler secret put SUPABASE_URL
-# wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-# wrangler secret put SUPABASE_ANON_KEY
+# Replace with your actual Cloudflare account id (required for some wrangler operations)
+account_id = "REPLACE_WITH_ACCOUNT_ID"
 
-[vars]
-# Non-sensitive variables can go here
-# SUPABASE_URL = "https://your-project.supabase.co"
-
-# To deploy:
-# 1. Install wrangler: npm install -g wrangler
-# 2. Login: wrangler login
-# 3. Set secrets:
-#    wrangler secret put SUPABASE_URL
-#    wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-#    wrangler secret put SUPABASE_ANON_KEY
-# 4. Deploy: wrangler deploy
-#
-# Note: The full API worker uses SERVICE_ROLE_KEY for write operations
-# The old worker.js (read-only) used ANON_KEY
+[build]
+command = "npm ci && npm run build"
