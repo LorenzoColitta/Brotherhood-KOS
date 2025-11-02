@@ -4,7 +4,17 @@
 import { logger } from '../utils/logger.js';
 
 // Use top-level await to dynamically import node-fetch only when needed.
-const fetch = globalThis.fetch ?? (await import('node-fetch')).default;
+let fetch;
+if (globalThis.fetch) {
+  fetch = globalThis.fetch;
+} else {
+  try {
+    const nodeFetch = await import('node-fetch');
+    fetch = nodeFetch.default;
+  } catch (error) {
+    throw new Error('No fetch implementation available. Please upgrade to Node.js 18+ or install node-fetch.');
+  }
+}
 
 const ROBLOX_API_BASE = 'https://api.roblox.com';
 const ROBLOX_USERS_API = 'https://users.roblox.com';
