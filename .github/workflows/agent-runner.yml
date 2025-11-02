@@ -25,11 +25,33 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install agent dependencies
-        run: cd scr/agent && npm ci
+      - name: Install agent dependencies (tolerant)
+        run: |
+          echo "Repo root: $(pwd)"
+          ls -la
+          # ensure directory exists
+          if [ ! -d "scr/agent" ]; then
+            echo "Directory scr/agent not found. Did you mean src/agent? Aborting."
+            ls -la
+            exit 1
+          fi
+          cd scr/agent
+          echo "Inside: $(pwd)"
+          ls -la
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+            echo "Lockfile found — running npm ci"
+            npm ci --no-audit --no-fund
+          else
+            echo "No lockfile found — falling back to npm install (CI)"
+            npm install --no-audit --no-fund
+          fi
+        shell: bash
 
       - name: Run agent
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          GUILD_ID: ${{ secrets.GUILD_ID }}
         run: node scr/agent/index.js
