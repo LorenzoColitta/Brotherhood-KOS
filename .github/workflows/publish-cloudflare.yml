@@ -46,11 +46,11 @@ jobs:
           echo "Starting Cloudflare Worker deployment..."
           docker run --rm \
             -e DOPPLER_SERVICE_TOKEN="$DOPPLER_SERVICE_TOKEN" \
-            -e CF_API_TOKEN="$CF_API_TOKEN" \
+            -e CLOUDFLARE_API_TOKEN="$CF_API_TOKEN" \
             -e CF_ACCOUNT_ID="$CF_ACCOUNT_ID" \
             cloudflare-worker-deploy:latest \
             "doppler run --token \"\$DOPPLER_SERVICE_TOKEN\" -- \
-            bash -lc 'npm ci && npm run build && \
+            bash -lc 'npm run build && \
             npx wrangler publish --account-id \$CF_ACCOUNT_ID'"
           echo "✅ Cloudflare Worker deployed successfully"
 
