@@ -119,7 +119,6 @@ npm run start:doppler        # Start bot with Doppler secrets
 npm run start:api:doppler    # Start API with Doppler secrets
 npm run deploy-commands:doppler
 npm run set-admin:doppler
-npm run api-deploy:doppler   # Deploy Cloudflare Worker
 ```
 
 ## 🌐 REST API
@@ -128,11 +127,12 @@ The Brotherhood KOS system includes a full-featured REST API for programmatic ac
 
 ### Deployment Options
 
-**Option 1: Cloudflare Workers (Recommended for Production)**
+**Option 1: Cloudflare Builds (Recommended for Production)**
+- Automatic deployment on git push to main branch
 - Global edge deployment with CDN
 - Automatic scaling and DDoS protection
-- Free tier: 100,000 requests/day
-- See [CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md) for setup
+- No CI/CD authentication hassles
+- See [CLOUDFLARE-BUILDS-INSTRUCTIONS.md](./CLOUDFLARE-BUILDS-INSTRUCTIONS.md) for setup
 
 **Option 2: Express Server (Node.js)**
 - Traditional server deployment (VPS, Railway, etc.)
@@ -141,45 +141,40 @@ The Brotherhood KOS system includes a full-featured REST API for programmatic ac
 
 ### Quick Start
 
-1. Use the Discord bot to generate an auth code:
-   ```
-   /console
-   ```
+1. Generate an API key:
+   - Set `API_SECRET_KEY` environment variable in Cloudflare Dashboard
+   - Use this key for x-api-key header authentication
 
-2. Exchange the code for a session token:
+2. Make API requests:
    ```bash
-   # For local Express server
-   curl -X POST http://localhost:3000/api/auth/login \
-     -H "Content-Type: application/json" \
-     -d '{"code": "YOUR_CODE"}'
+   # Health check (no authentication required)
+   curl https://your-worker.workers.dev/health
    
-   # For Cloudflare Workers
-   curl -X POST https://your-worker.workers.dev/api/auth/login \
+   # List messages (requires x-api-key)
+   curl -H "x-api-key: YOUR_API_SECRET_KEY" \
+        https://your-worker.workers.dev/messages
+   
+   # Create a message (requires x-api-key)
+   curl -X POST https://your-worker.workers.dev/messages \
      -H "Content-Type: application/json" \
-     -d '{"code": "YOUR_CODE"}'
-   ```
-
-3. Use the token for API requests:
-   ```bash
-   curl -X GET http://localhost:3000/api/kos \
-     -H "Authorization: Bearer YOUR_TOKEN"
+     -H "x-api-key: YOUR_API_SECRET_KEY" \
+     -d '{"content": "Hello", "author": "User"}'
    ```
 
 ### API Features
 
-- ✅ Full CRUD operations on KOS entries
-- ✅ History/exit registry access
-- ✅ Statistics endpoint
-- ✅ Discord-based authentication
-- ✅ Session management
+- ✅ Simple x-api-key authentication
+- ✅ Message storage and retrieval
+- ✅ Health check endpoint
 - ✅ CORS support
-- ✅ Edge deployment ready (Cloudflare Workers)
+- ✅ Automatic deployment via Cloudflare Builds
+- ✅ Edge deployment with global CDN
 
 ### Documentation
 
+- **[CLOUDFLARE-BUILDS-INSTRUCTIONS.md](./CLOUDFLARE-BUILDS-INSTRUCTIONS.md)** - Cloudflare Builds setup (Recommended)
 - **[API.md](./API.md)** - Complete API endpoint documentation
 - **[API_TESTING.md](./API_TESTING.md)** - Testing guide with examples
-- **[CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md)** - Cloudflare Workers deployment
 
 ## 🔧 Configuration
 
@@ -207,9 +202,9 @@ See `.env.example` for a complete template.
 
 ## 📚 Documentation
 
+- **[CLOUDFLARE-BUILDS-INSTRUCTIONS.md](./CLOUDFLARE-BUILDS-INSTRUCTIONS.md)** - Cloudflare Builds deployment (Recommended for Workers)
 - **[API.md](./API.md)** - Complete REST API documentation and examples
 - **[API_TESTING.md](./API_TESTING.md)** - API testing guide with examples
-- **[CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md)** - Deploy API to Cloudflare Workers
 - **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Detailed deployment instructions for all components
 - **[RAILWAY.md](./RAILWAY.md)** - Deploy to Railway platform (recommended for beginners)
 - **[DOPPLER.md](./DOPPLER.md)** - Secrets management with Doppler integration
@@ -245,26 +240,18 @@ pm2 save
 
 ### API Deployment
 
-#### Option 1: Cloudflare Workers (Recommended)
+#### Option 1: Cloudflare Builds (Recommended)
 
-Deploy to the edge for global low-latency access:
+Automatic deployment on git push with no manual wrangler steps:
 
-```bash
-# Install Wrangler
-npm install -g wrangler
+1. Connect your GitHub repository to Cloudflare Builds
+2. Configure runtime secrets in Cloudflare Dashboard:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `API_SECRET_KEY`
+3. Push to main branch - automatic deployment!
 
-# Login to Cloudflare
-wrangler login
-
-# Set secrets
-wrangler secret put SUPABASE_URL
-wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-
-# Deploy
-wrangler deploy
-```
-
-See [CLOUDFLARE_WORKERS.md](./CLOUDFLARE_WORKERS.md) for complete setup guide.
+See [CLOUDFLARE-BUILDS-INSTRUCTIONS.md](./CLOUDFLARE-BUILDS-INSTRUCTIONS.md) for complete setup guide.
 
 #### Option 2: Traditional Server (Node.js/Express)
 
@@ -285,10 +272,11 @@ pm2 start src/api/server.js --name brotherhood-kos-api
 ```
 Brotherhood-KOS/
 ├── src/
+│   ├── worker.js         # Cloudflare Worker (Builds deployment)
 │   ├── api/              # API implementations
 │   │   ├── server.js     # Express.js server (Node.js)
-│   │   ├── worker-full.js # Cloudflare Worker (edge)
-│   │   └── worker-readonly.js # Old read-only worker (backup)
+│   │   ├── worker-full.js # Legacy Cloudflare Worker (full API)
+│   │   └── worker-readonly.js # Legacy read-only worker
 │   ├── bot/              # Discord bot
 │   │   ├── commands/     # Slash command implementations
 │   │   └── events/       # Discord event handlers

@@ -1,125 +1,191 @@
-# Cloudflare Workers Deployment Guide
+# Cloudflare Builds Deployment Guide
 
 ## Overview
 
-The Brotherhood KOS API can be deployed to Cloudflare Workers for edge computing with global distribution, low latency, and automatic scaling.
+The Brotherhood KOS Worker can be deployed to Cloudflare using **Cloudflare Builds**, which provides automatic deployment on git push with no manual wrangler authentication or CI/CD complexity.
 
-## Architecture Options
+## What is Cloudflare Builds?
 
-You have two deployment options:
+Cloudflare Builds is an automated deployment service that:
+- **Automatically builds and deploys** your Worker when you push to your main branch
+- **Eliminates CI/CD authentication issues** - no need for wrangler tokens in GitHub Actions
+- **Manages runtime secrets** securely in the Cloudflare Dashboard
+- **Provides edge deployment** with global CDN and automatic scaling
+- **Requires no local wrangler setup** for deployment (though useful for local dev)
 
-### Option 1: Cloudflare Workers (Recommended for Production)
-- **Edge deployment** with global CDN
-- **Automatic scaling** and DDoS protection
-- **Low latency** worldwide
-- **Cost-effective** (Free tier: 100,000 requests/day)
-- Uses `src/api/worker-full.js`
+## Architecture
 
-### Option 2: Express Server (Node.js)
-- **Traditional server** deployment
-- Runs on VPS, Railway, Heroku, etc.
-- Better for development and local testing
-- Uses `src/api/server.js`
+### Current Worker Implementation
 
-## Cloudflare Workers Setup
+**File**: `src/worker.js`
+
+The Worker provides a simple API with x-api-key authentication:
+
+- **GET /health** - Health check (no authentication)
+- **GET /messages** - List messages (requires x-api-key)
+- **POST /messages** - Create a message (requires x-api-key)
+
+**Runtime Secrets** (configured in Cloudflare Dashboard):
+- `SUPABASE_URL` - Your Supabase project URL
+- `SUPABASE_ANON_KEY` - Supabase anonymous/public key
+- `API_SECRET_KEY` - Your custom API secret for x-api-key authentication
+
+## Cloudflare Builds Setup
 
 ### Prerequisites
 
 1. A Cloudflare account (free tier works)
-2. Wrangler CLI installed globally
-3. Supabase project with database tables set up
+2. GitHub repository access
+3. Supabase project with database set up
 
-### Step 1: Install Wrangler
+### Step 1: Connect Repository to Cloudflare Builds
 
-```bash
-npm install -g wrangler
-```
+See the complete guide: [CLOUDFLARE-BUILDS-INSTRUCTIONS.md](./CLOUDFLARE-BUILDS-INSTRUCTIONS.md)
 
-Or use npx without global installation:
-```bash
-npx wrangler --version
-```
+Quick overview:
+1. Go to Cloudflare Dashboard → Workers & Pages
+2. Click "Create Application" → "Pages" → "Connect to Git"
+3. Authorize Cloudflare to access your GitHub
+4. Select your repository
+5. Configure build settings:
+   - **Production branch**: `main`
+   - **Build command**: `npm ci && npm run build`
+   - **Build output directory**: `dist`
 
-### Step 2: Login to Cloudflare
+### Step 2: Configure Runtime Environment Variables
 
-```bash
-wrangler login
-```
+After connecting the repository:
 
-This will open a browser window for authentication.
+1. Go to your Worker's settings in Cloudflare Dashboard
+2. Navigate to Settings → Environment Variables
+3. Add these secrets (mark as "Encrypted"):
 
-### Step 3: Configure Environment Variables
+| Variable Name | Description | Example |
+|--------------|-------------|---------|
+| `SUPABASE_URL` | Your Supabase project URL | `https://xxxxx.supabase.co` |
+| `SUPABASE_ANON_KEY` | Supabase anonymous key | `eyJ...` |
+| `API_SECRET_KEY` | Your custom API authentication key | Generate with `openssl rand -hex 32` |
 
-You need to set three secrets in Cloudflare Workers:
+### Step 3: Update Account ID
 
-```bash
-# Set your Supabase URL
-wrangler secret put SUPABASE_URL
-# Enter: https://your-project.supabase.co
-
-# Set your Supabase Service Role Key (for write operations)
-wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-# Enter: your_service_role_key_here
-
-# Set your Supabase Anon Key (optional, for backward compatibility)
-wrangler secret put SUPABASE_ANON_KEY
-# Enter: your_anon_key_here
-```
-
-**Important:** The worker uses the `SERVICE_ROLE_KEY` for full database access, including write operations. Keep this key secure!
+1. Find your Cloudflare Account ID in the dashboard
+2. Edit `wrangler.toml` in your repository
+3. Replace `REPLACE_WITH_ACCOUNT_ID` with your actual account ID
+4. Commit and push
 
 ### Step 4: Deploy
 
-Deploy the worker to Cloudflare:
+Push your changes to the main branch:
 
 ```bash
-# Standard deployment
-wrangler deploy
-
-# Or with Doppler
-npm run api-deploy:doppler
+git push origin main
 ```
 
-### Step 5: Test Your Deployment
+Cloudflare Builds will automatically:
+1. Clone your repository
+2. Run `npm ci && npm run build`
+3. Deploy the built Worker to the edge
+4. Inject your runtime secrets
 
-After deployment, Wrangler will show you the worker URL:
+Monitor the deployment in: Cloudflare Dashboard → Workers & Pages → Your Worker → Deployments
 
-```
-Published brotherhood-kos-api
-  https://brotherhood-kos-api.your-subdomain.workers.dev
-```
+### Step 5: Test Deployment
 
-Test the health endpoint:
+Once deployed, test your Worker:
 
 ```bash
-curl https://brotherhood-kos-api.your-subdomain.workers.dev/health
+# Health check (no authentication)
+curl https://your-worker.workers.dev/health
+
+# List messages (requires x-api-key)
+curl -H "x-api-key: YOUR_API_SECRET_KEY" \
+     https://your-worker.workers.dev/messages
+
+# Create a message (requires x-api-key)
+curl -X POST https://your-worker.workers.dev/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_API_SECRET_KEY" \
+  -d '{"content": "Hello from API", "author": "TestUser"}'
 ```
 
-## Configuration
+## Local Development
 
-### wrangler.toml
+For local testing, you can still use wrangler:
 
-The `wrangler.toml` file configures your worker:
+### Install Wrangler (Optional for Local Dev)
 
+```bash
+npm install -g wrangler
+# or
+npx wrangler --version
+```
+
+### Local Development Server
+
+```bash
+# Start local dev server
+wrangler dev
+
+# Or using npm script
+npm run dev
+```
+
+This starts a local server at `http://localhost:8787`
+
+### Create Local Environment
+
+Create a `.dev.vars` file for local secrets:
+
+```bash
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your_anon_key
+API_SECRET_KEY=your_api_secret_key
+```
+
+**Note**: `.dev.vars` is gitignored and only used for local development.
+
+## Build Process
+
+The Worker uses esbuild for bundling:
+
+**package.json build script**:
+```json
+{
+  "scripts": {
+    "build": "esbuild src/worker.js --bundle --outfile=dist/worker.js --platform=browser --target=es2020 --minify"
+  }
+}
+```
+
+**wrangler.toml build configuration**:
 ```toml
-name = "brotherhood-kos-api"
-main = "src/api/worker-full.js"
-compatibility_date = "2024-01-01"
-
-[vars]
-# Non-sensitive variables can go here
+[build]
+command = "npm ci && npm run build"
 ```
 
-### Environment Variables
+This bundles `src/worker.js` with all dependencies into a single `dist/worker.js` file.
 
-Secrets (sensitive data) are set via `wrangler secret put` and are encrypted at rest. They're available in the worker via the `env` object.
+## CI/CD Integration
 
-**Required Secrets:**
-- `SUPABASE_URL` - Your Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY` - Service role key for write operations
+### GitHub Actions
 
-**Optional Secrets:**
-- `SUPABASE_ANON_KEY` - Anon key (for backward compatibility)
+The CI workflow (`.github/workflows/doppler-ci.yml`) has been updated to **remove** the wrangler deployment step. Cloudflare Builds now handles Worker deployments automatically.
+
+**What changed**:
+- ❌ Removed: Manual wrangler deploy step
+- ❌ Removed: Secret management via wrangler CLI
+- ✅ Added: Informational message about Cloudflare Builds
+
+**Benefits**:
+- No need for `CLOUDFLARE_API_TOKEN` in GitHub Secrets
+- No authentication errors in CI
+- Simpler workflow focused on bot deployment only
+
+### Deployment Workflow
+
+1. **Developer pushes to main** → GitHub Actions runs (bot commands deployment only)
+2. **Cloudflare Builds triggers** → Automatic Worker build and deployment
+3. **Worker deployed** → Available at your workers.dev URL
 
 ## Custom Domain (Optional)
 
@@ -127,60 +193,68 @@ Secrets (sensitive data) are set via `wrangler secret put` and are encrypted at 
 
 1. Go to Workers & Pages → Your Worker
 2. Click "Custom Domains"
-3. Add your domain (must be on Cloudflare)
-4. DNS records are configured automatically
+3. Add your domain (must be on Cloudflare DNS)
+4. DNS records configured automatically
 
 Example: `api.brotherhood.com` → your worker
 
-### Update API Base URL
+## Configuration
 
-Once you have a custom domain, update your API documentation and clients to use:
+### wrangler.toml
 
+```toml
+name = "brotherhood-kos-worker"
+main = "dist/worker.js"
+compatibility_date = "2025-11-02"
+account_id = "YOUR_ACCOUNT_ID"
+
+[build]
+command = "npm ci && npm run build"
 ```
-https://api.brotherhood.com
+
+### package.json
+
+```json
+{
+  "name": "brotherhood-kos-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/worker.js --bundle --outfile=dist/worker.js --platform=browser --target=es2020 --minify",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.17.0",
+    "wrangler": "^4.45.3"
+  }
+}
 ```
-
-Instead of:
-
-```
-https://brotherhood-kos-api.your-subdomain.workers.dev
-```
-
-## Usage with Discord Bot
-
-The Discord bot's `/console` command works with both deployment options:
-
-1. User runs `/console` in Discord
-2. Bot generates auth code (stored in Supabase)
-3. User exchanges code for token via your API (CF Worker or Express)
-4. User makes authenticated API requests
-
-The authentication flow is the same regardless of deployment method!
 
 ## Monitoring and Logs
 
-### View Logs
+### View Logs in Dashboard
 
-Stream live logs from your worker:
+1. Go to Workers & Pages → Your Worker
+2. Click on a deployment
+3. View real-time logs and metrics
+
+### Live Logs with Wrangler (Local)
 
 ```bash
 wrangler tail
 ```
 
-Or view logs with filters:
+Or filter by status:
 
 ```bash
 wrangler tail --status error
 ```
 
-### Cloudflare Dashboard
-
-View analytics, logs, and metrics:
-1. Go to Workers & Pages
-2. Select your worker
-3. Check metrics, logs, and settings
-
-## Performance Considerations
+## Performance and Limits
 
 ### Cloudflare Workers Limits
 
@@ -194,135 +268,109 @@ View analytics, logs, and metrics:
 - 50ms CPU time per request
 - 128 MB memory
 
-### Optimization Tips
+### Optimization
 
-1. **Caching:** The worker doesn't cache by default. Implement caching for frequently accessed data if needed.
-
-2. **Database Queries:** Minimize the number of Supabase queries per request.
-
-3. **Async Operations:** Use fire-and-forget for non-critical operations (like updating `last_used_at`).
-
-## Comparison: Workers vs Express Server
-
-| Feature | Cloudflare Workers | Express Server |
-|---------|-------------------|----------------|
-| Deployment | Edge (global CDN) | Single server/region |
-| Scaling | Automatic | Manual/Auto (depends on host) |
-| Cold Start | ~5-10ms | ~1-2s |
-| Latency | Low (edge) | Higher (single location) |
-| Cost | Free tier available | VPS/hosting cost |
-| Setup | Simple | More complex |
-| Local Dev | Wrangler dev | npm start |
-| WebSocket | No | Yes |
-| Long Tasks | 50ms limit | No limit |
-
-## Development Workflow
-
-### Local Development
-
-Test locally with Wrangler:
-
-```bash
-wrangler dev
-```
-
-This starts a local server at `http://localhost:8787`
-
-### Testing
-
-Use the same tests as the Express API:
-
-```bash
-# 1. Start local worker
-wrangler dev
-
-# 2. Run tests against localhost:8787
-curl http://localhost:8787/health
-```
-
-### Deployment Workflow
-
-```bash
-# 1. Test locally
-wrangler dev
-
-# 2. Deploy to production
-wrangler deploy
-
-# 3. Monitor logs
-wrangler tail
-```
+The Worker is optimized for edge deployment:
+- ✅ Single bundled file (no external imports)
+- ✅ Minimal dependencies (@supabase/supabase-js)
+- ✅ Efficient request handling
+- ✅ CORS support built-in
 
 ## Troubleshooting
 
-### "Error: Script contains imports" 
+### Build Fails
 
-The worker must be a single file without ES6 imports. Our `worker-full.js` is self-contained.
+**Error: Module not found**
+- Ensure `package.json` has all required dependencies
+- Check build command: `npm ci && npm run build`
 
-### "Error: Database connection failed"
+**Error: esbuild failed**
+- Verify `src/worker.js` has no syntax errors
+- Check import statements are correct
 
-Check your Supabase secrets:
-```bash
-wrangler secret list
+### Worker Returns 500 Errors
+
+**Check environment variables**:
+1. Go to Cloudflare Dashboard → Your Worker → Settings → Environment Variables
+2. Verify all three secrets are set:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `API_SECRET_KEY`
+
+**Check Worker logs**:
+- View logs in Cloudflare Dashboard
+- Look for detailed error messages
+
+### Authentication Fails
+
+**401 Unauthorized errors**:
+- Verify `API_SECRET_KEY` matches between Cloudflare and your requests
+- Ensure you're sending `x-api-key` header (not `Authorization`)
+- Check header syntax: `x-api-key: YOUR_KEY`
+
+### Deployment Not Triggering
+
+**Push to main doesn't deploy**:
+- Check Cloudflare Dashboard → Workers & Pages → Your Worker → Settings
+- Verify GitHub integration is active
+- Check production branch is set to `main`
+
+## Migration from Manual Wrangler
+
+If you were using manual wrangler deployment:
+
+### Before (Manual Wrangler)
+
+```yaml
+# .github/workflows/doppler-ci.yml
+- name: Deploy Cloudflare Worker
+  run: |
+    doppler run -- npx wrangler deploy
+    wrangler secret put SUPABASE_URL
+    wrangler secret put SUPABASE_ANON_KEY
 ```
 
-Re-set if needed:
-```bash
-wrangler secret put SUPABASE_URL
-wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+### After (Cloudflare Builds)
+
+```yaml
+# .github/workflows/doppler-ci.yml
+- name: Cloudflare Builds notice
+  run: |
+    echo "Using Cloudflare Builds for Worker deployment."
 ```
 
-### "Error: Request timeout"
-
-Workers have a 50ms CPU time limit. Optimize database queries or upgrade to paid tier.
-
-### "401 Unauthorized" errors
-
-Ensure `SUPABASE_SERVICE_ROLE_KEY` is set correctly. The service role key has full database access.
-
-## Migration from Express to Workers
-
-If you're currently using the Express server (`src/api/server.js`):
-
-1. **Database:** No changes needed - both use Supabase
-2. **Discord Bot:** No changes needed - `/console` command works the same
-3. **Clients:** Update API base URL to your worker URL
-4. **Code:** Deploy worker alongside Express initially, then switch
-
-### Gradual Migration
-
-1. Deploy worker to Cloudflare
-2. Test with a few users
-3. Update DNS to point to worker
-4. Monitor for issues
-5. Decommission Express server
+**Migration Steps**:
+1. ✅ Connect repository to Cloudflare Builds
+2. ✅ Set runtime secrets in Cloudflare Dashboard
+3. ✅ Update `wrangler.toml` with account ID
+4. ✅ Remove wrangler deploy step from CI
+5. ✅ Push to main - automatic deployment!
 
 ## Security Considerations
 
-### Service Role Key
+### Runtime Secrets
 
-The worker uses `SUPABASE_SERVICE_ROLE_KEY` for database operations. This key:
-
-- ✅ **Is encrypted** by Cloudflare Workers secrets
-- ✅ **Never exposed** to clients
-- ✅ **Required** for write operations
-- ⚠️ **Has full database access** - secure it carefully
+All secrets are managed in Cloudflare Dashboard:
+- ✅ Encrypted at rest
+- ✅ Never exposed to clients
+- ✅ Injected at runtime only
+- ✅ Not in source code or git
 
 ### Best Practices
 
-1. **Never commit** service role key to git
-2. **Use Wrangler secrets** for all sensitive data
-3. **Rotate keys** periodically
+1. **Never commit secrets** to git
+2. **Use Cloudflare Dashboard** for all secret management
+3. **Rotate keys periodically** (especially `API_SECRET_KEY`)
 4. **Monitor logs** for suspicious activity
-5. **Enable Cloudflare WAF** for additional protection
+5. **Use HTTPS** for all API requests
 
 ## Cost Estimation
 
-### Free Tier (Most Cases)
+### Free Tier
 
 With 100,000 requests/day free:
 - **~3M requests/month** free
-- Perfect for small to medium communities
+- Perfect for small to medium projects
 
 ### Paid Tier ($5/month)
 
@@ -330,49 +378,73 @@ If you exceed free tier:
 - **10M requests included**
 - **$0.50 per additional million**
 
-### Example Costs
+### Example Usage
 
-For a Discord server with 1,000 active users:
-- Estimated: **~100K-500K requests/month**
-- **Cost: $0** (well within free tier)
+For a project with moderate usage:
+- **Estimated**: ~100K-500K requests/month
+- **Cost**: $0 (within free tier)
 
-## Support
+## Support and Resources
 
-For issues specific to:
-- **Cloudflare Workers:** [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
-- **Wrangler CLI:** [Wrangler Docs](https://developers.cloudflare.com/workers/wrangler/)
-- **This API:** Open an issue on GitHub
+### Documentation
 
----
+- **[Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)**
+- **[Cloudflare Builds Docs](https://developers.cloudflare.com/pages/platform/builds/)**
+- **[CLOUDFLARE-BUILDS-INSTRUCTIONS.md](./CLOUDFLARE-BUILDS-INSTRUCTIONS.md)** - Detailed setup guide
+
+### Troubleshooting
+
+- Check Worker logs in Cloudflare Dashboard
+- Review build logs for deployment errors
+- Verify environment variables are set correctly
+
+### Community
+
+- Open issues on GitHub
+- Check Cloudflare Community forums
+- Review Workers examples on GitHub
 
 ## Quick Reference
 
 ```bash
-# Install Wrangler
-npm install -g wrangler
+# Local development
+npm install
+npm run build        # Build Worker locally
+npm run dev          # Start local dev server (wrangler dev)
 
-# Login
-wrangler login
+# Deploy (automatic via Cloudflare Builds)
+git push origin main
 
-# Set secrets
-wrangler secret put SUPABASE_URL
-wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-
-# Deploy
-wrangler deploy
-
-# View logs
+# View logs (requires wrangler)
 wrangler tail
 
-# Local development
-wrangler dev
+# Manual deploy (if needed)
+wrangler deploy
 ```
 
-**Worker URL after deployment:**
-```
-https://brotherhood-kos-api.your-subdomain.workers.dev
-```
+## Comparison: Cloudflare Builds vs Manual Wrangler
 
-**All endpoints work the same as Express API!**
+| Feature | Cloudflare Builds | Manual Wrangler |
+|---------|------------------|-----------------|
+| Deployment | Automatic on git push | Manual command |
+| CI/CD Setup | Simple (no tokens) | Complex (API tokens) |
+| Secret Management | Cloudflare Dashboard | wrangler CLI |
+| Build Process | Automatic | Manual or CI |
+| Local Dev | wrangler dev | wrangler dev |
+| Cost | Free | Free |
+| Recommended For | Production | Testing/Development |
 
-See [API.md](./API.md) for complete endpoint documentation.
+**Recommendation**: Use **Cloudflare Builds** for production deployments and `wrangler dev` for local development.
+
+---
+
+## Summary
+
+Cloudflare Builds provides the easiest path to deploying Workers:
+
+1. ✅ **Connect** repo to Cloudflare Builds
+2. ✅ **Configure** runtime secrets in Dashboard
+3. ✅ **Push** to main branch
+4. ✅ **Done** - automatic deployment!
+
+No wrangler authentication, no CI/CD complexity, just push and deploy.
