@@ -11,6 +11,10 @@ jobs:
   deploy-cloudflare-worker:
     runs-on: ubuntu-latest
 
+    # Explicit permissions for security
+    permissions:
+      contents: read
+
     # Set a reasonable timeout to prevent hanging builds
     timeout-minutes: 15
 
