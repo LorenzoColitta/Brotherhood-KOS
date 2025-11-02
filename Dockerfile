@@ -1,10 +1,9 @@
 # Use Node 18 Alpine for a lightweight build
 FROM node:18-alpine
 
-# Install necessary tools and Doppler CLI
+# Install necessary tools and Doppler CLI (keep gnupg installed)
 RUN apk add --no-cache bash curl gnupg \
-    && curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh | sh \
-    && apk del gnupg
+    && curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh | sh
 
 # Set working directory
 WORKDIR /app
