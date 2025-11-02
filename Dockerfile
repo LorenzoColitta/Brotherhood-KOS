@@ -1,24 +1,41 @@
 # Use Node 18 Alpine for a lightweight build
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 
-# Install necessary tools and Doppler CLI (keep gnupg installed)
-RUN apk add --no-cache bash curl gnupg \
-    && curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh | sh
+# Install necessary tools
+RUN apk add --no-cache bash curl
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install dependencies (including devDependencies for build)
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm ci --omit=dev
-
-# Copy application code
+# Copy app sources
 COPY . .
 
-# Expose port (if needed for health checks or API)
+# Build the application (required for Cloudflare Worker compatibility)
+RUN npm run build
+
+# Production stage
+FROM node:18-alpine
+
+# Install necessary tools
+RUN apk add --no-cache bash curl
+
+WORKDIR /app
+
+# Copy package files and install production deps only
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Copy other necessary files
+COPY . .
+
+# Expose port (if your app uses one)
 EXPOSE 3000
 
-# Run the application with Doppler to inject secrets at runtime
-CMD ["doppler", "run", "--", "npm", "start"]
+# Start the app directly — Railway (or Doppler sync) provides secrets as env vars
+CMD ["npm", "start"]
