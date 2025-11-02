@@ -6,8 +6,9 @@ const HOST = '0.0.0.0';
 
 // Create minimal HTTP server
 const server = http.createServer((req, res) => {
-  // Log incoming requests
-  logger.info(`HTTP ${req.method} ${req.url} from ${req.socket.remoteAddress}`);
+  // Log incoming requests (handle proxies/load balancers)
+  const clientIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
+  logger.info(`HTTP ${req.method} ${req.url} from ${clientIp}`);
 
   // Set JSON response header
   res.setHeader('Content-Type', 'application/json');
