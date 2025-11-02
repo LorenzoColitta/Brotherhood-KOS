@@ -47,8 +47,7 @@ jobs:
           node-version: '18'
 
       - name: Install Doppler CLI
-        run: |
-          curl -Ls https://cli.doppler.com/install.sh | sh
+        uses: dopplerhq/cli-action@v3
 
       - name: Publish Worker (Doppler + Wrangler)
         env:
@@ -57,7 +56,9 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: |
           # Build and publish the Worker using Doppler for secrets
-          doppler run --token "$DOPPLER_SERVICE_TOKEN" -- bash -lc "npm ci && npm run build && npx wrangler deploy --account-id $CF_ACCOUNT_ID"
+          doppler run --token "$DOPPLER_SERVICE_TOKEN" -- npm ci
+          doppler run --token "$DOPPLER_SERVICE_TOKEN" -- npm run build
+          doppler run --token "$DOPPLER_SERVICE_TOKEN" -- npx wrangler deploy --account-id "$CF_ACCOUNT_ID"
 
       - name: "Optional: Trigger Railway redeploy (if RAILWAY_TOKEN & project/service IDs provided)"
         env:
