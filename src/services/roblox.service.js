@@ -1,5 +1,6 @@
-import fetch from 'node-fetch';
 import { logger } from '../utils/logger.js';
+
+const fetch = globalThis.fetch ?? (await import('node-fetch')).default;
 
 const ROBLOX_API_BASE = 'https://api.roblox.com';
 const ROBLOX_USERS_API = 'https://users.roblox.com';
