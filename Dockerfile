@@ -1,24 +1,24 @@
-# Use Node 18 Alpine for a lightweight image
+# Use Node 18 Alpine for a lightweight build
 FROM node:18-alpine
 
-# Install necessary tools and keep gnupg for signature verification
-RUN apk add --no-cache bash curl gnupg
+# Install necessary tools and Doppler CLI (keep gnupg installed)
+RUN apk add --no-cache bash curl gnupg \
+    && curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh | sh
 
+# Set working directory
 WORKDIR /app
 
-# Install dependencies (adjust as needed)
+# Copy package files
 COPY package*.json ./
+
+# Install dependencies
 RUN npm ci --omit=dev
 
-# Copy app sources and build (if you have a build step)
+# Copy application code
 COPY . .
 
-# Install Doppler CLI once during image build so we don't curl on every start
-RUN curl -Ls --tlsv1.2 --proto "=https" --retry 3 https://cli.doppler.com/install.sh | sh
-
-# Expose port (if your app uses one)
+# Expose port (if needed for health checks or API)
 EXPOSE 3000
 
-# Start the app using Doppler to inject secrets at runtime.
-# The DOPPLER_SERVICE_TOKEN must be set in Railway Variables.
-CMD ["bash", "-lc", "doppler run --token \"$DOPPLER_SERVICE_TOKEN\" -- npm start"]
+# Run the application with Doppler to inject secrets at runtime
+CMD ["doppler", "run", "--", "npm", "start"]
