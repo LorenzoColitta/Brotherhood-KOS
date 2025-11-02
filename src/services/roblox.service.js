@@ -1,5 +1,10 @@
-import fetch from 'node-fetch';
+// Prefer the global fetch available in Node 18+. If it's not present, dynamically import node-fetch.
+// This avoids a hard dependency on node-fetch causing ERR_MODULE_NOT_FOUND in environments
+// where node-fetch isn't installed.
 import { logger } from '../utils/logger.js';
+
+// Use top-level await to dynamically import node-fetch only when needed.
+const fetch = globalThis.fetch ?? (await import('node-fetch')).default;
 
 const ROBLOX_API_BASE = 'https://api.roblox.com';
 const ROBLOX_USERS_API = 'https://users.roblox.com';
