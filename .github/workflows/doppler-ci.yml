@@ -29,7 +29,13 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit --progress=false
+          else
+            npm install --no-audit --progress=false
+          fi
+        working-directory: ./
 
       - name: Install Doppler CLI
         uses: dopplerhq/cli-action@v3
