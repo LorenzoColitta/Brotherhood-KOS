@@ -6,7 +6,12 @@
   "scripts": {
     "build": "esbuild src/worker.js --bundle --outfile=dist/worker.js --platform=browser --target=es2020 --minify",
     "dev": "wrangler dev",
-    "start": "node dist/worker.js"
+    "start": "node dist/worker.js",
+    "start:web": "node src/bot/index.js & node src/server.js",
+    "start:doppler": "doppler run -- node src/bot/index.js",
+    "deploy-commands:doppler": "doppler run -- node src/bot/deploy-commands.js",
+    "set-admin:doppler": "doppler run -- node scripts/set-admin-password.js",
+    "api-deploy:doppler": "doppler run -- wrangler deploy"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
