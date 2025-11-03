@@ -81,24 +81,114 @@ export async function execute(interaction) {
           .setStyle(ButtonStyle.Secondary)
       );
     
+    // Send the embed (we already deferred, so we edit the deferred reply),
+    // then fetch the Message object so we can safely create a collector on it.
     await interaction.editReply({
       content: '',
       embeds: [confirmEmbed],
       components: [confirmRow],
     });
-    
-    // Wait for button interaction
+
+    // IMPORTANT: fetch the updated reply message (interaction.fetchReply returns the Message)
+    const replyMessage = await interaction.fetchReply().catch((err) => {
+      logger.warn('Could not fetch reply message after editReply:', err);
+      return null;
+    });
+
+    // Diagnostic log
+    logger.debug(`add command: replyMessage id=${replyMessage?.id ?? '<null>'} components=${replyMessage?.components?.length ?? 0}`);
+
+    // If we couldn't fetch a reply message (rare), fall back to interaction.awaitMessageComponent
+    if (!replyMessage) {
+      logger.warn('add command: replyMessage is null, using awaitMessageComponent fallback');
+      try {
+        const component = await interaction.awaitMessageComponent({
+          filter: i => i.user.id === interaction.user.id && (i.customId === 'confirm_add' || i.customId === 'cancel_add'),
+          time: 60000,
+        });
+
+        if (component.customId === 'cancel_add') {
+          await component.update({
+            content: '❌ KOS entry cancelled.',
+            embeds: [],
+            components: [],
+          });
+          return;
+        }
+
+        if (component.customId === 'confirm_add') {
+          await component.update({
+            content: '⏳ Adding entry to database...',
+            embeds: [],
+            components: [],
+          });
+
+          try {
+            const entry = await addKosEntry({
+              robloxUsername: robloxInfo.name,
+              robloxUserId: robloxInfo.id,
+              reason: reason,
+              addedBy: interaction.user.tag,
+              addedByDiscordId: interaction.user.id,
+              expiryDate: expiryDate,
+              thumbnailUrl: robloxInfo.thumbnailUrl,
+            });
+
+            const successEmbed = new EmbedBuilder()
+              .setTitle('✅ KOS Entry Added')
+              .setColor(0x4CAF50)
+              .setThumbnail(robloxInfo.thumbnailUrl || null)
+              .addFields(
+                { name: 'Username', value: robloxInfo.name, inline: true },
+                { name: 'User ID', value: robloxInfo.id.toString(), inline: true },
+                { name: 'Reason', value: reason, inline: false },
+                { 
+                  name: 'Status', 
+                  value: expiryDate ? `Expires <t:${Math.floor(new Date(expiryDate).getTime() / 1000)}:R>` : 'Permanent', 
+                  inline: false 
+                }
+              )
+              .setTimestamp();
+
+            await component.update({
+              content: '',
+              embeds: [successEmbed],
+              components: [],
+            });
+
+            logger.success(`KOS entry added for ${robloxInfo.name} by ${interaction.user.tag}`);
+          } catch (error) {
+            logger.error('Error adding KOS entry (fallback):', error);
+            await component.update({
+              content: `❌ Error adding KOS entry: ${error.message}`,
+              embeds: [],
+              components: [],
+            }).catch(() => {});
+          }
+        }
+      } catch (err) {
+        logger.warn('add command: awaitMessageComponent timeout or error:', err);
+        await interaction.editReply({
+          content: '⏱️ Confirmation timed out. Please try again.',
+          embeds: [],
+          components: [],
+        }).catch(() => {});
+      }
+      return;
+    }
+
+    // Create collector on the returned message (safe because fetchReply returned it)
     const filter = i => i.user.id === interaction.user.id && (i.customId === 'confirm_add' || i.customId === 'cancel_add');
-    const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
-    
+    const collector = replyMessage.createMessageComponentCollector({ filter, time: 60000 });
+
     collector.on('collect', async i => {
       if (i.customId === 'cancel_add') {
         await i.update({
           content: '❌ KOS entry cancelled.',
           embeds: [],
           components: [],
-        });
-        collector.stop();
+        }).catch(() => {});
+        collector.stop('cancelled');
         return;
       }
       
@@ -107,7 +197,7 @@ export async function execute(interaction) {
           content: '⏳ Adding entry to database...',
           embeds: [],
           components: [],
-        });
+        }).catch(() => {});
         
         try {
           // Add to database
@@ -138,29 +228,45 @@ export async function execute(interaction) {
             )
             .setTimestamp();
           
-          await i.editReply({
+          // Use i.update to update the message tied to the button interaction
+          await i.update({
             content: '',
             embeds: [successEmbed],
-          });
+            components: [],
+          }).catch(() => {});
           
           logger.success(`KOS entry added for ${robloxInfo.name} by ${interaction.user.tag}`);
         } catch (error) {
-          await i.editReply({
+          logger.error('Error adding KOS entry:', error);
+          await i.update({
             content: `❌ Error adding KOS entry: ${error.message}`,
-          });
+            embeds: [],
+            components: [],
+          }).catch(() => {});
         }
         
-        collector.stop();
+        collector.stop('confirmed');
       }
     });
     
-    collector.on('end', collected => {
+    collector.on('end', async (collected, reason) => {
+      logger.debug(`add command: collector ended, reason=${reason}, collected=${collected.size}`);
       if (collected.size === 0) {
-        interaction.editReply({
+        // No interactions were collected
+        await interaction.editReply({
           content: '⏱️ Confirmation timed out. Please try again.',
           embeds: [],
           components: [],
         }).catch(() => {});
+      } else {
+        // Ensure components removed after interaction
+        try {
+          if (replyMessage && !replyMessage.deleted) {
+            await replyMessage.edit({ components: [] }).catch(() => {});
+          }
+        } catch (err) {
+          logger.warn('add command: failed to clean up components after end:', err);
+        }
       }
     });
     
