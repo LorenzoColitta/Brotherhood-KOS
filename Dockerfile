@@ -19,8 +19,8 @@ RUN npm run build
 # Production stage
 FROM node:18-alpine
 
-# Install necessary tools
-RUN apk add --no-cache bash curl
+# Install necessary tools (gnupg for Doppler CLI signature verification, ca-certificates for TLS)
+RUN apk add --no-cache bash curl gnupg ca-certificates && update-ca-certificates || true
 
 WORKDIR /app
 
