@@ -1,41 +1,34 @@
-# Use Node 18 Alpine for a lightweight build
+# Builder stage
 FROM node:18-alpine AS builder
-
-# Install necessary tools
-RUN apk add --no-cache bash curl
-
 WORKDIR /app
 
-# Copy package files and install dependencies (including devDependencies for build)
+# Install build dependencies and copy source
 COPY package*.json ./
-RUN npm ci
-
-# Copy app sources
+RUN npm ci --omit=dev
 COPY . .
-
-# Build the application (required for Cloudflare Worker compatibility)
+# Build step (adjust if your project doesn't use a build step)
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine
-
-# Install necessary tools (gnupg for Doppler CLI signature verification, ca-certificates for TLS)
-RUN apk add --no-cache bash curl gnupg ca-certificates && update-ca-certificates || true
-
+# Runtime stage
+FROM node:18-alpine AS runtime
 WORKDIR /app
 
-# Copy package files and install production deps only
+# Install minimal runtime tools (curl for doppler install)
+RUN apk add --no-cache bash curl ca-certificates
+
+# Install only production deps
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy built application from builder stage
+# Copy built artifacts and rest of the app
 COPY --from=builder /app/dist ./dist
-
-# Copy other necessary files
 COPY . .
 
-# Expose port (if your app uses one)
+ENV NODE_ENV=production
 EXPOSE 3000
 
-# Start the app directly — Railway (or Doppler sync) provides secrets as env vars
-CMD ["npm", "run", "start:web"]
+# Ensure entrypoint is executable; entrypoint will install doppler (if token present)
+# and run the app via doppler run -- npm run start:web, or fall back to npm run start:web.
+RUN chmod +x ./entrypoint.sh
+
+ENTRYPOINT ["sh", "./entrypoint.sh"]
