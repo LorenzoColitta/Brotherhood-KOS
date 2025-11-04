@@ -6,7 +6,11 @@
  *   import './utils/consoleWrapper.js';
  */
 
-const MAX_LOGS_PER_SEC = parseInt(process.env.MAX_LOGS_PER_SEC || '10', 10);
+let MAX_LOGS_PER_SEC = parseInt(process.env.MAX_LOGS_PER_SEC || '10', 10);
+// Ensure MAX_LOGS_PER_SEC is a positive number
+if (!MAX_LOGS_PER_SEC || MAX_LOGS_PER_SEC <= 0 || isNaN(MAX_LOGS_PER_SEC)) {
+  MAX_LOGS_PER_SEC = 10;
+}
 const WINDOW_MS = 1000;
 const MAX_BUFFER_SIZE = 1000;
 
