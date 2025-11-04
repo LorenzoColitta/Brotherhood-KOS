@@ -90,6 +90,7 @@ export async function execute(interaction) {
     });
 
     // IMPORTANT: fetch the updated reply message (interaction.fetchReply returns the Message)
+    // This prevents TypeError: Cannot read properties of null (reading 'createMessageComponentCollector')
     const replyMessage = await interaction.fetchReply().catch((err) => {
       logger.warn('Could not fetch reply message after editReply:', err);
       return null;
