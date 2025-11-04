@@ -38,4 +38,4 @@ COPY . .
 EXPOSE 3000
 
 # Start the app directly — Railway (or Doppler sync) provides secrets as env vars
-CMD ["npm", "start"]
+CMD ["npm", "run", "start:web"]

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: brotherhood-kos
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+    startCommand: curl -sLf https://cli.doppler.com/install.sh | sh && doppler run -- npm run start:web
