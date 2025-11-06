@@ -37,6 +37,8 @@ function validSignature(rawBuf, headerSig) {
 }
 
 // Simple rate limiting guard (very small, to avoid accidental floods)
+// Note: This is a minimal implementation suitable for single-threaded Node.js
+// For production use with multiple instances, consider a distributed rate limiter
 let lastReq = 0;
 const MIN_MS_BETWEEN = 20;
 
@@ -54,7 +56,7 @@ app.post('/api/add-kos', async (req, res) => {
     }
     lastReq = now;
 
-    const { userId, target, guildId, command, timestamp } = req.body || {};
+    const { userId, target, guildId, command } = req.body || {};
     if (!userId || !target) return res.status(400).json({ ok: false, error: 'missing fields' });
 
     const record = {

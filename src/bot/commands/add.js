@@ -5,8 +5,13 @@ import crypto from 'crypto';
 const API_BASE = process.env.API_BASE_URL;
 const API_SHARED_SECRET = process.env.API_SHARED_SECRET;
 
+if (!API_BASE || !API_SHARED_SECRET) {
+  console.error('[FATAL] Missing required environment variables: API_BASE_URL, API_SHARED_SECRET');
+  process.exit(1);
+}
+
 function signBody(body) {
-  return 'v1=' + crypto.createHmac('sha256', API_SHARED_SECRET || '').update(body).digest('hex');
+  return 'v1=' + crypto.createHmac('sha256', API_SHARED_SECRET).update(body).digest('hex');
 }
 
 async function hmacPost(path, payload, timeoutMs = 5000) {
@@ -51,7 +56,9 @@ export async function execute(interaction) {
   
   try {
     if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply({ ephemeral: true }).catch(() => {});
+      await interaction.deferReply({ ephemeral: true }).catch((err) => {
+        console.warn('Failed to defer reply:', err);
+      });
     }
   } catch (err) {
     console.warn('Failed to defer reply:', err);
