@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.env.*.local
+.git
+.gitignore
+.github
+README.md
+*.md
+.vscode
+.idea
+tools
+scripts/set-admin-password.js
+.DS_Store
+*.log

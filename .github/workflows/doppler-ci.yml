@@ -1,0 +1,67 @@
+name: Doppler CI - Test and Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '25'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit --progress=false
+          else
+            npm install --no-audit --progress=false
+          fi
+        working-directory: ./
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Validate Doppler integration
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: |
+          # Validate that Doppler secrets are accessible
+          echo "Validating Doppler configuration..."
+          if doppler secrets --only-names > /dev/null 2>&1; then
+            echo "✅ Doppler authentication successful"
+          else
+            echo "❌ Failed to authenticate with Doppler. Please check DOPPLER_TOKEN secret."
+            exit 1
+          fi
+
+      - name: Deploy Discord commands
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+        env:
+          DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
+        run: |
+          doppler run -- node src/bot/deploy-commands.js
+          echo "✅ Discord commands deployed"
+
+      - name: Cloudflare Builds notice
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Using Cloudflare Builds for Worker deployment. Remove wrangler deploy steps from CI."

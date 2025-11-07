@@ -1,0 +1,9 @@
+name = "brotherhood-kos-worker"
+main = "dist/worker.js"
+compatibility_date = "2025-11-02"
+
+# Replace with your actual Cloudflare account id (required for some wrangler operations)
+account_id = "REPLACE_WITH_ACCOUNT_ID"
+
+[build]
+command = "npm ci && npm run build"
