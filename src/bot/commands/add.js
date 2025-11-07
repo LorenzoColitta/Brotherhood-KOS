@@ -1,141 +1,89 @@
-// url=https://github.com/LorenzoColitta/Brotherhood-KOS/blob/main/src/bot/commands/add.js
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { getRobloxUserInfo } from '../../services/roblox.service.js';
-import { addKosEntry } from '../../services/kos.service.js';
-import { logger } from '../../utils/logger.js';
-import ms from 'ms';
-import { randomUUID } from 'crypto';
-import { setPending } from '../state/pendingConfirmations.js';
+import { SlashCommandBuilder } from 'discord.js';
+import fetch from 'node-fetch';
+import crypto from 'crypto';
+
+const API_BASE = process.env.API_BASE_URL;
+const API_SHARED_SECRET = process.env.API_SHARED_SECRET;
+
+if (!API_BASE || !API_SHARED_SECRET) {
+  console.error('[FATAL] Missing required environment variables: API_BASE_URL, API_SHARED_SECRET');
+  process.exit(1);
+}
+
+function signBody(body) {
+  return 'v1=' + crypto.createHmac('sha256', API_SHARED_SECRET).update(body).digest('hex');
+}
+
+async function hmacPost(path, payload, timeoutMs = 5000) {
+  const body = JSON.stringify(payload);
+  const signature = signBody(body);
+
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Signature': signature,
+        'User-Agent': 'brotherhood-kos-bot/1.0'
+      },
+      body,
+      signal: controller.signal
+    });
+    const text = await res.text();
+    try {
+      return { status: res.status, body: JSON.parse(text) };
+    } catch {
+      return { status: res.status, body: text };
+    }
+  } finally {
+    clearTimeout(id);
+  }
+}
 
 export const data = new SlashCommandBuilder()
-    .setName('add')
-    .setDescription('Add a player to the KOS list')
-    .addStringOption(option =>
-        option.setName('username')
-            .setDescription('Roblox username of the player')
-            .setRequired(true))
-    .addStringOption(option =>
-        option.setName('reason')
-            .setDescription('Reason for adding to KOS')
-            .setRequired(true))
-    .addStringOption(option =>
-        option.setName('duration')
-            .setDescription('Duration (e.g., 7d, 30d, 1y) - leave empty for permanent')
-            .setRequired(false));
+  .setName('add')
+  .setDescription('Add a player to the KOS list')
+  .addStringOption(option =>
+    option.setName('target')
+      .setDescription('Target to add to KOS list')
+      .setRequired(true));
 
 export async function execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
-
-    const username = interaction.options.getString('username');
-    const reason = interaction.options.getString('reason');
-    const duration = interaction.options.getString('duration');
-
-    try {
-        // Validate duration if provided
-        let expiryDate = null;
-        if (duration) {
-            const durationMs = ms(duration);
-            if (!durationMs || durationMs <= 0) {
-                return await interaction.editReply({
-                    content: '❌ Invalid duration format. Use formats like: 7d, 30d, 1y, 6mo',
-                });
-            }
-            expiryDate = new Date(Date.now() + durationMs).toISOString();
-        }
-
-        // Fetch Roblox user info
-        await interaction.editReply('🔍 Looking up Roblox user...');
-
-        const robloxInfo = await getRobloxUserInfo(username);
-        if (!robloxInfo) {
-            return await interaction.editReply({
-                content: `❌ Could not find Roblox user: **${username}**\nPlease check the username and try again.`,
-            });
-        }
-
-        // Create confirmation embed
-        const confirmEmbed = new EmbedBuilder()
-            .setTitle('⚠️ Confirm KOS Entry')
-            .setDescription('Please review the details below and confirm:')
-            .setColor(0xFF6B6B)
-            .setThumbnail(robloxInfo.thumbnailUrl || null)
-            .addFields(
-                { name: 'Roblox Username', value: robloxInfo.name, inline: true },
-                { name: 'User ID', value: robloxInfo.id.toString(), inline: true },
-                { name: 'Reason', value: reason, inline: false },
-                {
-                    name: 'Duration',
-                    value: expiryDate ? `Expires: <t:${Math.floor(new Date(expiryDate).getTime() / 1000)}:R>` : 'Permanent',
-                    inline: false
-                },
-                { name: 'Added By', value: interaction.user.tag, inline: true }
-            )
-            .setTimestamp();
-
-        // generate a token and embed it in customId
-        const token = randomUUID();
-
-        const confirmRow = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`confirm_add:${token}`)
-                    .setLabel('Confirm')
-                    .setStyle(ButtonStyle.Danger),
-                new ButtonBuilder()
-                    .setCustomId(`cancel_add:${token}`)
-                    .setLabel('Cancel')
-                    .setStyle(ButtonStyle.Secondary)
-            );
-
-        // Edit the deferred reply to send embed + buttons
-        await interaction.editReply({
-            content: '',
-            embeds: [confirmEmbed],
-            components: [confirmRow],
-        });
-
-        // fetch the message we just edited (for timeout editing)
-        const replyMessage = await interaction.fetchReply().catch(err => {
-            logger.warn('add: fetchReply failed', err);
-            return null;
-        });
-
-        // Save pending data with a timeout that cleans up and edits the message on expire
-        const timeoutHandle = setTimeout(async () => {
-            try {
-                // if still pending, edit message to remove buttons / indicate timeout
-                // note: it's ok if fetch/edit fails (message deleted or ephemeral)
-                if (replyMessage) {
-                    await replyMessage.edit({
-                        content: '⏱️ Confirmation timed out. Please try again.',
-                        embeds: [],
-                        components: []
-                    }).catch(() => {});
-                }
-            } catch (e) {
-                // ignore
-            } finally {
-                // ensure cleanup by key removal (the global handler will also remove on confirm/cancel)
-                // removePending(token) will be done by the global handler or expiry; keep minimal here
-            }
-        }, 60_000);
-
-        // store pending info for token lookup in global handler
-        setPending(token, {
-            invokerId: interaction.user.id,
-            robloxInfo,
-            reason,
-            expiryDate,
-            thumbnailUrl: robloxInfo.thumbnailUrl || null,
-            timeoutHandle
-        });
-
-        // Reply already sent by editReply (deferred previously), function returns
-        return;
-    } catch (error) {
-        logger.error('Error in add command:', error);
-        await interaction.editReply({
-            content: `❌ An error occurred: ${error.message}`,
-        }).catch(() => {});
+  const targetValue = interaction.options.getString('target');
+  
+  try {
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch((err) => {
+        console.warn('Failed to defer reply:', err);
+      });
     }
+  } catch (err) {
+    console.warn('Failed to defer reply:', err);
+  }
+
+  const payload = {
+    userId: interaction.user.id,
+    target: targetValue,
+    guildId: interaction.guildId,
+    command: 'add-kos',
+    timestamp: Date.now()
+  };
+
+  try {
+    const result = await hmacPost('/api/add-kos', payload, 5000);
+    if (result.status >= 200 && result.status < 300) {
+      await interaction.editReply({ content: result.body?.message || 'Added successfully.' });
+    } else if (result.status === 401) {
+      await interaction.editReply({ content: 'Authentication failed (invalid signature).' });
+    } else {
+      console.warn('API returned non-2xx', result);
+      await interaction.editReply({ content: 'Sorry — could not complete the request (API error).' });
+    }
+  } catch (err) {
+    console.error('API request failed', err?.stack || err);
+    await interaction.editReply({ content: 'Request timed out or failed; please try again later.' });
+  }
 }
