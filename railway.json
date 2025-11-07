@@ -1,6 +1,0 @@
-{
-  "deploy": {
-    "buildCommand": "npm ci && npm run build",
-    "startCommand": "curl -sLf https://cli.doppler.com/install.sh | sh && doppler run -- npm run start:web"
-  }
-}
