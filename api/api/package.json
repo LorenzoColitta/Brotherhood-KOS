@@ -1,0 +1,15 @@
+{
+  "name": "brotherhood-kos-api",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "api/add-kos.js",
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "start": "vercel dev --listen 3000"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.1"
+  }
+}

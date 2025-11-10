@@ -3,7 +3,10 @@
 // Required environment variables (in Vercel project settings):
 // - SUPABASE_URL (e.g. https://xyz.supabase.co)
 // - SUPABASE_SERVICE_ROLE_KEY (service_role key - keep only on server)
-// - API_SHARED_SECRET (HMAC secret used by the bot)
+// - API_SHARED_SECRET (HMAC secret shared with the bot)
+
+import crypto from 'crypto';
+import fetch from 'node-fetch';
 
 async function getRawBody(req) {
     const chunks = [];
@@ -37,7 +40,6 @@ export default async function handler(req, res) {
 
     // Verify HMAC signature
     try {
-        const crypto = await import('crypto');
         const expected = crypto.createHmac('sha256', API_SHARED_SECRET).update(raw).digest('hex');
         const expectedHeader = 'v1=' + expected;
         const a = Buffer.from(sigHeader || '', 'utf8');
@@ -66,7 +68,6 @@ export default async function handler(req, res) {
     const insertUrl = new URL('/rest/v1/kos', SUPABASE_URL).toString();
 
     try {
-        const fetch = (await import('node-fetch')).default;
         const payload = [{
             user_id: userId,
             target,
@@ -79,7 +80,6 @@ export default async function handler(req, res) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // For Supabase REST, Authorization and apikey should both be the service_role key
                 'apikey': SUPABASE_SERVICE_ROLE_KEY,
                 'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
                 'Prefer': 'return=representation'
