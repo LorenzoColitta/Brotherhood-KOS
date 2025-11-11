@@ -1,34 +1,31 @@
-# Builder stage
-FROM node:18-alpine AS builder
+# Use Node 22 for build compatibility with modern packages and Vercel expectation
+FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Install build dependencies and copy source
+# Copy package files and install ALL deps (including dev deps) for build step
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
+
+# Copy source and run the build (esbuild / webpack / etc. must be in deps/devDeps)
 COPY . .
-# Build step (adjust if your project doesn't use a build step)
 RUN npm run build
 
-# Runtime stage
-FROM node:18-alpine AS runtime
+# Production image: keep it small and install only prod deps
+FROM node:22-alpine AS runtime
 WORKDIR /app
 
-# Install minimal runtime tools (curl for doppler install)
-RUN apk add --no-cache bash curl ca-certificates
-
-# Install only production deps
+# Install only production dependencies
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy built artifacts and rest of the app
+# Copy built output and needed runtime files from builder
+# Adjust copied paths below to match your project's build output and runtime entrypoint
 COPY --from=builder /app/dist ./dist
-COPY . .
+COPY --from=builder /app/api ./api
+COPY --from=builder /app/package.json ./package.json
 
-ENV NODE_ENV=production
+# Expose port if your app listens (adjust if not needed)
 EXPOSE 3000
 
-# Ensure entrypoint is executable; entrypoint will install doppler (if token present)
-# and run the app via doppler run -- npm run start:web, or fall back to npm run start:web.
-RUN chmod +x ./entrypoint.sh
-
-ENTRYPOINT ["sh", "./entrypoint.sh"]
+# Start command: adjust if your app uses a different start script
+CMD ["npm", "start"]
