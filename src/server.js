@@ -1,6 +1,8 @@
-// Simple server wrapper for Render: imports worker (side-effects) then starts a tiny HTTP server.
-// Ensure your worker's startup code (Discord client connect, etc.) is executed from ./worker.js
-import './worker.js';
+// src/server.js
+// Server wrapper: import your worker (side-effects), then start a small HTTP server
+// that keeps the process alive for Render and provides a /health endpoint.
+
+import './worker.js'; // ensure your worker's startup runs (Discord client connect, etc.)
 import http from 'http';
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;

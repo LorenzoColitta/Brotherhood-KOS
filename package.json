@@ -3,10 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
-    "build": "esbuild src/worker.js --bundle --outfile=dist/worker.js --platform=browser --target=es2020 --minify",
+    "build": "esbuild src/server.js --bundle --outfile=dist/server.js --platform=node --target=node22 --sourcemap",
+    "build:worker": "esbuild src/worker.js --bundle --outfile=dist/worker.js --platform=browser --target=es2020 --minify",
     "dev": "wrangler dev",
-    "start": "node dist/worker.js",
+    "start": "node dist/server.js",
     "start:web": "node src/bot/index.js & node src/server.js",
     "start:doppler": "doppler run -- npm run start:web",
     "deploy-commands:doppler": "doppler run -- node src/bot/deploy-commands.js",
