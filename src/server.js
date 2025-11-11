@@ -1,62 +1,34 @@
+// Simple server wrapper for Render: imports worker (side-effects) then starts a tiny HTTP server.
+// Ensure your worker's startup code (Discord client connect, etc.) is executed from ./worker.js
+import './worker.js';
 import http from 'http';
-import { logger } from './utils/logger.js';
 
-const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0';
-
-// Create minimal HTTP server
+const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 const server = http.createServer((req, res) => {
-  // Log incoming requests (handle proxies/load balancers)
-  const clientIp = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
-  logger.info(`HTTP ${req.method} ${req.url} from ${clientIp}`);
-
-  // Set JSON response header
-  res.setHeader('Content-Type', 'application/json');
-
-  // Handle routes
-  if (req.url === '/' || req.url === '/health') {
-    res.statusCode = 200;
-    res.end(JSON.stringify({
-      status: 'ok',
-      service: 'brotherhood-kos-discord-bot',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    }));
-  } else {
-    res.statusCode = 404;
-    res.end(JSON.stringify({
-      status: 'error',
-      message: 'Not found'
-    }));
-  }
+    if (req.url === '/health' || req.url === '/api/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok', service: 'brotherhood-kos-worker', uptime: process.uptime() }));
+        return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('ok\n');
 });
 
-// Start server
-server.listen(PORT, HOST, () => {
-  logger.success(`Healthcheck server listening on http://${HOST}:${PORT}`);
-  logger.info('Endpoints: / and /health');
+server.listen(port, () => {
+    console.log(`Server listening on port ${port} (PID ${process.pid})`);
 });
 
 // Graceful shutdown
-const shutdown = () => {
-  logger.info('Received shutdown signal, closing healthcheck server...');
-  server.close(() => {
-    logger.info('Healthcheck server closed');
-    process.exit(0);
-  });
-
-  // Force close after 10 seconds
-  setTimeout(() => {
-    logger.warn('Forcing shutdown after timeout');
-    process.exit(1);
-  }, 10000);
-};
-
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
-
-// Handle server errors
-server.on('error', (error) => {
-  logger.error('Healthcheck server error:', error.message);
-  process.exit(1);
-});
+function shutdown(signal) {
+    console.log(`Received ${signal}. Shutting down...`);
+    server.close(() => {
+        console.log('HTTP server closed.');
+        process.exit(0);
+    });
+    setTimeout(() => {
+        console.error('Forcing shutdown.');
+        process.exit(1);
+    }, 10000).unref();
+}
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
