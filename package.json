@@ -10,7 +10,7 @@
     "build": "esbuild src/server.js --bundle --outfile=dist/server.js --platform=node --target=node22 --format=esm --sourcemap",
     "build:worker": "esbuild src/worker.js --bundle --outfile=dist/worker.js --platform=browser --target=es2020 --minify",
     "dev": "wrangler dev",
-    "start": "node dist/server.js",
+    "start": "node src/bot/index.js & node dist/server.js",
     "start:web": "node src/bot/index.js & node src/server.js",
     "start:doppler": "doppler run -- npm run start:web",
     "deploy-commands:doppler": "doppler run -- node src/bot/deploy-commands.js",
