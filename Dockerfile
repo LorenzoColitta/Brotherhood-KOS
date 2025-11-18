@@ -1,4 +1,4 @@
- url=https://github.com/LorenzoColitta/Brotherhood-KOS/blob/main/Dockerfile
+# url=https://github.com/LorenzoColitta/Brotherhood-KOS/blob/main/Dockerfile
 # Multi-stage Dockerfile for Render
 # - build stage installs dev deps and runs the esbuild build step
 # - runtime stage installs only prod deps, optionally installs Doppler CLI,
