@@ -13,7 +13,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(false));
 
 export async function execute(interaction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 64 });
   
   const filter = interaction.options.getString('filter');
   

@@ -7,7 +7,7 @@ export const data = new SlashCommandBuilder()
   .setDescription('View bot status and statistics');
 
 export async function execute(interaction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 64 });
   
   try {
     // Get bot status and statistics

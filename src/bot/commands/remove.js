@@ -11,7 +11,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true));
 
 export async function execute(interaction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 64 });
   
   const username = interaction.options.getString('username');
   
