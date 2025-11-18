@@ -1,4 +1,3 @@
-# url=https://github.com/LorenzoColitta/Brotherhood-KOS/blob/main/Dockerfile
 # Multi-stage Dockerfile for Render
 # - build stage installs dev deps and runs the esbuild build step
 # - runtime stage installs only prod deps, optionally installs Doppler CLI,
@@ -19,10 +18,11 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 
 # Install runtime utilities and Doppler CLI so we can optionally pull secrets at runtime.
-# We install ca-certificates (for HTTPS), curl (installer), and bash for the install script.
-RUN apk add --no-cache ca-certificates curl bash \
+# We install ca-certificates (for HTTPS), curl (installer), bash and gnupg for signature verification.
+# After installation we remove curl and gnupg to keep the runtime small.
+RUN apk add --no-cache ca-certificates curl bash gnupg \
   && curl -sLf --retry 3 https://cli.doppler.com/install.sh | sh \
-  && apk del curl
+  && apk del curl gnupg
 
 # Install only production dependencies
 COPY package*.json ./
