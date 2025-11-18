@@ -27,3 +27,4 @@ Thumbs.db
 .wrangler/
 dist/
 doppler.sh
+/shscr.sh
