@@ -8,7 +8,7 @@ export const data = new SlashCommandBuilder()
   .setDescription('Manage bot settings (Admin only)');
 
 export async function execute(interaction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 64 });
   
   try {
     // Check if user has an active admin session

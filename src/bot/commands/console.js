@@ -7,7 +7,7 @@ export const data = new SlashCommandBuilder()
   .setDescription('Generate an authentication code for API access');
 
 export async function execute(interaction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 64 });
   
   try {
     // Generate authentication code

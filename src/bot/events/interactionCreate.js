@@ -2,6 +2,7 @@ import { Events } from 'discord.js';
 import { getPending, removePending } from '../state/pendingConfirmations.js';
 import { addKosEntry } from '../../services/kos.service.js';
 import { logger } from '../../utils/logger.js';
+import { logDiscordError } from '../utils/discordLogger.js';
 
 /*
  This module registers a global interactionCreate listener.
@@ -10,18 +11,6 @@ import { logger } from '../../utils/logger.js';
 
 export const name = Events.InteractionCreate;
 export const once = false;
-
-function logDiscordError(prefix, err) {
-    // Friendly structured logging for Discord API errors
-    if (!err) {
-        logger.error(prefix + ' Unknown error');
-        return;
-    }
-    const errMsg = err.message || String(err);
-    const code = err.code !== undefined ? err.code : (err.status || err.httpStatus || undefined);
-    logger.error(`${prefix} message=${errMsg} code=${code}`);
-    if (err.stack) logger.error(err.stack);
-}
 
 export async function execute(interaction) {
     try {

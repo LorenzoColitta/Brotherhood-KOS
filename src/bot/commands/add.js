@@ -56,7 +56,7 @@ export async function execute(interaction) {
   
   try {
     if (!interaction.deferred && !interaction.replied) {
-      await interaction.deferReply({ ephemeral: true }).catch((err) => {
+      await interaction.deferReply({ flags: 64 }).catch((err) => {
         console.warn('Failed to defer reply:', err);
       });
     }
