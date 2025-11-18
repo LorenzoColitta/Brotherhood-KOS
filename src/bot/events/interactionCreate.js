@@ -11,6 +11,18 @@ import { logger } from '../../utils/logger.js';
 export const name = Events.InteractionCreate;
 export const once = false;
 
+function logDiscordError(prefix, err) {
+    // Friendly structured logging for Discord API errors
+    if (!err) {
+        logger.error(prefix + ' Unknown error');
+        return;
+    }
+    const errMsg = err.message || String(err);
+    const code = err.code !== undefined ? err.code : (err.status || err.httpStatus || undefined);
+    logger.error(`${prefix} message=${errMsg} code=${code}`);
+    if (err.stack) logger.error(err.stack);
+}
+
 export async function execute(interaction) {
     try {
         // --- Button handling (global) ---
@@ -26,13 +38,13 @@ export async function execute(interaction) {
             const pending = getPending(token);
             if (!pending) {
                 // expired or invalid token
-                await interaction.reply({ content: 'This confirmation has expired or is invalid.', ephemeral: true }).catch(() => {});
+                await interaction.reply({ content: 'This confirmation has expired or is invalid.', flags: 64 }).catch((err) => logDiscordError('reply (expired token) failed:', err));
                 return;
             }
 
             // Only the user who invoked the command may confirm/cancel
             if (interaction.user.id !== pending.invokerId) {
-                await interaction.reply({ content: 'Only the user who invoked this command can confirm/cancel it.', ephemeral: true }).catch(() => {});
+                await interaction.reply({ content: 'Only the user who invoked this command can confirm/cancel it.', flags: 64 }).catch((err) => logDiscordError('reply (invoker mismatch) failed:', err));
                 return;
             }
 
@@ -43,12 +55,13 @@ export async function execute(interaction) {
                         content: '❌ KOS entry cancelled.',
                         embeds: [],
                         components: [],
-                    }).catch(() => {});
+                    }).catch((err) => logDiscordError('interaction.update (cancel_add) failed:', err));
                     removePending(token);
                     logger.debug(`add: cancelled token=${token} by ${interaction.user.tag}`);
                 } catch (err) {
-                    logger.error('Error while handling cancel_add:', err);
-                    try { await interaction.followUp({ content: 'Failed to cancel (internal error).', ephemeral: true }); } catch {}
+                    // log full stack for diagnosis
+                    logDiscordError('Error while handling cancel_add:', err);
+                    try { await interaction.followUp({ content: 'Failed to cancel (internal error).', flags: 64 }); } catch (followErr) { logDiscordError('followUp after cancel_add failed:', followErr); }
                 }
                 return;
             }
@@ -60,7 +73,7 @@ export async function execute(interaction) {
                         content: '⏳ Adding entry to database...',
                         embeds: [],
                         components: [],
-                    }).catch(() => {});
+                    }).catch((err) => logDiscordError('interaction.update (confirm_add) failed:', err));
 
                     // perform DB add using stored pending payload
                     try {
@@ -88,17 +101,18 @@ export async function execute(interaction) {
                             timestamp: new Date().toISOString()
                         };
 
-                        await interaction.editReply?.({ content: '', embeds: [successEmbed], components: [] }).catch(() => {});
+                        await interaction.editReply?.({ content: '', embeds: [successEmbed], components: [] }).catch((err) => logDiscordError('editReply (confirm success) failed:', err));
                         removePending(token);
                         logger.success(`KOS entry added for ${pending.robloxInfo.name} by ${interaction.user.tag}`);
                     } catch (err) {
-                        logger.error('Error adding KOS entry (confirm handler):', err);
-                        await interaction.followUp?.({ content: `❌ Error adding KOS entry: ${err.message}`, ephemeral: true }).catch(() => {});
+                        // log full stack for diagnosis
+                        logDiscordError('Error adding KOS entry (confirm handler):', err);
+                        await interaction.followUp?.({ content: `❌ Error adding KOS entry: ${err.message}`, flags: 64 }).catch((followErr) => logDiscordError('followUp after addKosEntry failed:', followErr));
                         removePending(token);
                     }
                 } catch (err) {
-                    logger.error('Error while handling confirm_add:', err);
-                    try { await interaction.followUp({ content: 'Failed to confirm (internal error).', ephemeral: true }); } catch {}
+                    logDiscordError('Error while handling confirm_add:', err);
+                    try { await interaction.followUp({ content: 'Failed to confirm (internal error).', flags: 64 }); } catch (followErr) { logDiscordError('followUp after confirm_add failed:', followErr); }
                     removePending(token);
                 }
                 return;
@@ -119,20 +133,21 @@ export async function execute(interaction) {
                 // Important: command.execute must reply or defer within 3s
                 await command.execute(interaction);
             } catch (err) {
-                logger.error(`Error executing command ${interaction.commandName}:`, err);
+                // log full stack
+                logDiscordError(`Error executing command ${interaction.commandName}:`, err);
                 try {
                     if (!interaction.replied && !interaction.deferred) {
-                        await interaction.reply({ content: 'Internal error while executing command', ephemeral: true });
+                        await interaction.reply({ content: 'Internal error while executing command', flags: 64 });
                     } else {
-                        await interaction.followUp({ content: 'Internal error while executing command', ephemeral: true });
+                        await interaction.followUp({ content: 'Internal error while executing command', flags: 64 });
                     }
                 } catch (replyErr) {
-                    logger.error('Failed to send error reply for command error:', replyErr);
+                    logDiscordError('Failed to send error reply for command error:', replyErr);
                 }
             }
         }
     } catch (err) {
-        logger.error('Global interaction handler error:', err);
-        try { if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: 'Internal error', ephemeral: true }); } catch {}
+        logDiscordError('Global interaction handler error:', err);
+        try { if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: 'Internal error', flags: 64 }); } catch (replyErr) { logDiscordError('Global handler reply failed:', replyErr); }
     }
 }
